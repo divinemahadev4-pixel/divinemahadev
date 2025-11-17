@@ -1,0 +1,536 @@
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Heart, ShoppingCart, Eye, ChevronDown, Sparkles, Sun, Circle, Zap, CreditCard } from "lucide-react";
+import { useWishlist } from "./WishlistContext";
+import { useCart } from "./CartContext";
+import { useAuth } from "./AuthContext";
+import { useNavigate } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
+import axios from "axios";
+import { motion } from "framer-motion";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+// Import phone verification and payment processing
+import { usePhoneVerification } from "@/hooks/usePhoneVerification";
+import { usePaymentProcessing } from "@/hooks/usePaymentProcessing";
+import PhoneVerificationModal from "@/components/PhoneVerificationModal";
+
+const API_URL = import.meta.env.VITE_REACT_APP_API_URL || "http://localhost:3000";
+
+interface ApiProduct {
+  _id: string;
+  Product_name: string;
+  Product_price: number;
+  Product_image: string[];
+  Product_rating?: number;
+  isNew?: boolean;
+  Product_discription?: string;
+  Product_description?: string;
+  Product_available?: boolean;
+  Product_category?: { category: string; slug?: string };
+}
+
+interface Category {
+  _id: string;
+  name: string;
+  slug: string;
+}
+
+const currency = (n: number) => `₹${n.toLocaleString()}`;
+
+// Spiritual Symbol Component with cleaner design
+const SpiritualSymbol = () => (
+  <div className="relative w-14 h-14 flex items-center justify-center">
+    <motion.div
+      className="absolute w-10 h-10 bg-orange-100/50 rounded-full"
+      animate={{ scale: [1, 1.05, 1] }}
+      transition={{ duration: 3, repeat: Infinity }}
+    />
+    <Sun className="w-6 h-6 text-orange-400" fill="currentColor" fillOpacity="0.3" />
+  </div>
+);
+
+const ProductCard: React.FC<{
+  product: ApiProduct;
+  onClick: (id: string) => void;
+  onWishlistToggle: (e: React.MouseEvent, product: ApiProduct) => void;
+  onAddToCart: (product: ApiProduct) => void;
+  inWishlist: boolean;
+  onDirectBuy: (product: ApiProduct) => void;
+}> = React.memo(({ product, onClick, onWishlistToggle, onAddToCart, inWishlist, onDirectBuy }) => {
+  const [adding, setAdding] = useState(false);
+  const [buying, setBuying] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  
+  const handleAdd = () => {
+    if (adding) return;
+    setAdding(true);
+    onAddToCart(product);
+    setTimeout(() => setAdding(false), 700);
+  };
+
+  const handleDirectBuy = () => {
+    if (buying) return;
+    setBuying(true);
+    onDirectBuy(product);
+    setTimeout(() => setBuying(false), 700);
+  };
+  
+  const description = product.Product_description || product.Product_discription || "Blessed spiritual item with divine energy.";
+
+  return (
+    <motion.div
+      tabIndex={0}
+      onClick={() => onClick(product._id)}
+      className="group bg-white rounded-xl border border-orange-100/50 shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer flex flex-col focus:outline-none focus:ring-1 focus:ring-orange-200 overflow-hidden"
+      aria-label={product.Product_name}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -4, scale: 1.01 }}
+      transition={{ duration: 0.4 }}
+    >
+      <div className="relative aspect-square overflow-hidden rounded-t-xl bg-white">
+        {product.Product_image?.[0] ? (
+          <>
+            {!imageLoaded && (
+              <div className="absolute inset-0 bg-white flex items-center justify-center">
+                <SpiritualSymbol />
+              </div>
+            )}
+            <img
+              src={product.Product_image[0]}
+              alt={product.Product_name}
+              loading="lazy"
+              className={`object-cover w-full h-full transition-all duration-500 group-hover:scale-105 ${
+                imageLoaded ? 'opacity-100' : 'opacity-0'
+              }`}
+              onLoad={() => setImageLoaded(true)}
+              style={{ maxHeight: 230 }}
+            />
+          </>
+        ) : (
+          <div className="w-full h-full bg-white text-orange-700 flex items-center justify-center select-none">
+            <SpiritualSymbol />
+          </div>
+        )}
+        
+        {/* Subtle overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/5 to-white/10" />
+        
+        {/* Product Status Badges - Only NEW badge remains */}
+        <div className="absolute top-3 right-3">
+          {product.isNew && (
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 200, delay: 0.1 }}
+            >
+              <Badge className="bg-gradient-to-r from-emerald-400 to-green-500 text-white font-semibold text-xs px-2 py-1 border-0 shadow-sm">
+                <Zap className="w-3 h-3 mr-1" />
+                NEW
+              </Badge>
+            </motion.div>
+          )}
+        </div>
+
+        {/* Action Buttons */}
+        <motion.button
+          className={`absolute top-3 left-3 rounded-full p-1.5 bg-white/95 backdrop-blur-sm border border-orange-200/50 shadow-sm hover:bg-white transition-all duration-200 ${
+            inWishlist ? "text-rose-500" : "text-orange-400 hover:text-rose-400"
+          }`}
+          onClick={e => { e.stopPropagation(); onWishlistToggle(e, product); }}
+          aria-pressed={inWishlist}
+          aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <Heart size={14} fill={inWishlist ? "currentColor" : "none"} />
+        </motion.button>
+        
+        <motion.button
+          className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-sm shadow-sm border border-orange-200/50 rounded-full p-1.5 hover:bg-white transition-all duration-200 text-orange-500 hover:text-orange-600"
+          onClick={e => { e.stopPropagation(); onClick(product._id); }}
+          aria-label="View product details"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <Eye size={14} />
+        </motion.button>
+      </div>
+
+      {/* Product Info - Clean white design */}
+      <div className="flex flex-col flex-1 p-4 bg-white">
+        <h3 className="text-sm font-semibold text-gray-900 truncate mb-1" style={{ fontFamily: "'Playfair Display', serif" }}>
+          {product.Product_name}
+        </h3>
+        <p className="text-xs text-gray-600 line-clamp-2 mb-3 leading-relaxed" title={description}>
+          {description}
+        </p>
+        
+        <div className="mt-auto space-y-3">
+          {/* Clean Price Section */}
+          <div className="flex items-baseline justify-between">
+            <span className="text-base font-bold text-orange-600">{currency(product.Product_price)}</span>
+          </div>
+
+          {/* Action Buttons - Changed from row to column */}
+          <div className="space-y-2">
+            {/* Add to Cart Button */}
+            <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
+              <Button
+                onClick={e => { e.stopPropagation(); handleAdd(); }}
+                disabled={adding}
+                className="w-full font-medium rounded-lg bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white transition-all duration-200 shadow-sm hover:shadow border-0 text-xs py-2"
+              >
+                {adding ? (
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  >
+                    <Sparkles className="w-3 h-3" />
+                  </motion.div>
+                ) : (
+                  <>
+                    <ShoppingCart size={12} className="mr-1" /> 
+                    Add to Cart
+                  </>
+                )}
+              </Button>
+            </motion.div>
+
+            {/* Direct Buy Button */}
+            <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
+              <Button
+                onClick={e => { e.stopPropagation(); handleDirectBuy(); }}
+                disabled={buying}
+                className="w-full font-medium rounded-lg bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white transition-all duration-200 shadow-sm hover:shadow border-0 text-xs py-2"
+                variant="default"
+              >
+                {buying ? (
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  >
+                    <Sparkles className="w-3 h-3" />
+                  </motion.div>
+                ) : (
+                  <>
+                    <CreditCard size={12} className="mr-1" /> 
+                    Buy Now
+                  </>
+                )}
+              </Button>
+            </motion.div>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+});
+
+const FeaturedProducts: React.FC = () => {
+  const [products, setProducts] = useState<ApiProduct[]>([]);
+  const [categories, setCategories] = useState<{ _id: string; name: string; slug: string }[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [directBuyProduct, setDirectBuyProduct] = useState<ApiProduct | null>(null);
+
+  const { toggleWishlist, isInWishlist } = useWishlist();
+  const { addToCart } = useCart();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
+  // Phone verification and payment processing hooks
+  const phoneVerification = usePhoneVerification();
+  const { checkoutLoading, processPayment } = usePaymentProcessing();
+
+  const initialLimit = 10;
+  const loadMoreCount = 10;
+
+  const fetchCategories = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API_URL}/api/getAllData`, { timeout: 10000 });
+      if (Array.isArray(res.data?.data?.categories)) {
+        setCategories(res.data.data.categories);
+      }
+    } catch (e) {
+      console.error("Failed to fetch categories", e);
+    }
+  }, []);
+
+  const fetchProducts = useCallback(
+    async (limit: number, skip: number = 0, append: boolean = false, categorySlug: string = "") => {
+      try {
+        append ? setLoadingMore(true) : setLoading(true);
+        let url = `${API_URL}/api/getproducts?limit=${limit}&skip=${skip}`;
+        if (categorySlug) url += `&category=${encodeURIComponent(categorySlug)}`;
+        const res = await axios.get(url, { timeout: 10000 });
+        const incoming: ApiProduct[] = res.data.products || [];
+        setProducts(append ? (prev) => [...prev, ...incoming] : incoming);
+        setTotalProducts(res.data.totalProducts || incoming.length);
+        setHasMore(incoming.length === limit);
+      } catch (err) {
+        toast({
+          title: "Divine Error",
+          description: "Failed to load sacred products. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+        setLoadingMore(false);
+      }
+    },
+    []
+  );
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  useEffect(() => {
+    fetchProducts(initialLimit, 0, false, selectedCategory);
+  }, [fetchProducts, selectedCategory]);
+
+  // Handle phone verification for direct buy
+  useEffect(() => {
+    if (phoneVerification.phoneVerified && directBuyProduct) {
+      handleDirectBuyPayment(directBuyProduct);
+    }
+  }, [phoneVerification.phoneVerified, directBuyProduct]);
+
+  const handleLoadMore = useCallback(() => {
+    fetchProducts(loadMoreCount, products.length, true, selectedCategory);
+  }, [fetchProducts, loadMoreCount, products.length, selectedCategory]);
+
+  const handleWishlistToggle = useCallback(
+    (e: React.MouseEvent, product: ApiProduct) => {
+      e.stopPropagation();
+      if (!user) return navigate("/login");
+      toggleWishlist(product);
+      toast({
+        title: isInWishlist(product._id) ? "Removed from sacred collection" : "Added to sacred collection",
+        description: product.Product_name,
+        duration: 1400,
+      });
+    },
+    [isInWishlist, navigate, toggleWishlist, user]
+  );
+
+  const handleAddToCart = useCallback(
+    (product: ApiProduct) => {
+      if (!user) return navigate("/login");
+      addToCart({
+        id: parseInt(product._id.slice(-8), 16),
+        _id: product._id,
+        name: product.Product_name,
+        price: currency(product.Product_price),
+        originalPrice: currency(product.Product_price),
+        image: product.Product_image[0] || "",
+        isNew: product.isNew || false,
+        quantity: 1,
+      });
+      toast({
+        title: "Added to divine cart",
+        description: `${product.Product_name} - Blessed with positive energy`,
+        duration: 1600,
+      });
+    },
+    [addToCart, navigate, user]
+  );
+
+  const handleDirectBuy = useCallback(
+    (product: ApiProduct) => {
+      if (!user) {
+        toast({ 
+          title: "Please login", 
+          description: "You need to be logged in to buy directly", 
+          variant: "destructive" 
+        });
+        navigate("/login");
+        return;
+      }
+      
+      setDirectBuyProduct(product);
+      phoneVerification.setShowPhoneVerification(true);
+    },
+    [navigate, user, phoneVerification]
+  );
+
+  const handleDirectBuyPayment = async (product: ApiProduct) => {
+    if (!phoneVerification.phoneVerified) {
+      toast({ 
+        title: "Phone Not Verified", 
+        description: "Please verify your phone number first", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    const orderItems = [{
+      productId: product._id,
+      quantity: 1,
+      price: product.Product_price,
+      name: product.Product_name,
+      image: product.Product_image[0] || ""
+    }];
+
+    const shippingAddress = {
+      fullName: user?.firstName || "",
+      address: "",
+      city: "",
+      state: "",
+      pinCode: "",
+      phone: phoneVerification.phoneNumber
+    };
+
+    const success = await processPayment(
+      orderItems,
+      shippingAddress,
+      "online", // Default to online payment for direct buy
+      {
+        itemsTotal: product.Product_price,
+        deliveryCharge: 0,
+        totalAmount: product.Product_price
+      },
+      // "direct_buy"
+    );
+
+    if (success) {
+      setDirectBuyProduct(null);
+      phoneVerification.resetPhoneVerification();
+      toast({
+        title: "Order Placed Successfully!",
+        description: `${product.Product_name} - Your divine item is on its way`,
+        duration: 2000,
+      });
+    }
+  };
+
+  const handleProductClick = useCallback(
+    (productId: string) => {
+      navigate(`/product/${productId}`);
+    },
+    [navigate]
+  );
+
+  return (
+    <>
+      <section className="relative pt-20 pb-12 bg-white">
+        <div className="relative max-w-7xl mx-auto px-4">
+          {/* Header Section */}
+          <motion.header
+            className="mb-10 text-center max-w-4xl mx-auto"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <div className="inline-flex items-center gap-2 mb-3 bg-orange-50 rounded-full px-3 py-1 border border-orange-100">
+              <Sparkles className="w-3 h-3 text-orange-500" />
+              <span className="text-xs font-medium text-orange-700 uppercase tracking-wide">Sacred Selections</span>
+            </div>
+            <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-3" style={{ fontFamily: "'Playfair Display', serif" }}>
+              Divine <span className="bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">Products</span>
+            </h2>
+            <p className="text-sm md:text-base text-gray-600 max-w-2xl mx-auto leading-relaxed px-4">
+              Discover blessed malas, sacred murtis, and spiritual artifacts filled with divine energy
+            </p>
+            {totalProducts > 0 && (
+              <p className="mt-2 text-gray-500 font-medium text-xs md:text-sm">
+                Showing {products.length}
+                {totalProducts > products.length ? ` of ${totalProducts}` : ''} blessed items
+              </p>
+            )}
+          </motion.header>
+
+          {/* Category Filters - Clean white design */}
+          <div className="flex gap-2 mb-10 px-2 overflow-scroll">
+            <Button 
+              size="sm" 
+              variant={selectedCategory === "" ? "default" : "outline"} 
+              onClick={() => setSelectedCategory("")} 
+              className="rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-200 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white border-0 shadow-sm"
+            >
+              All Items
+            </Button>
+            {categories.slice(0, 4).map((cat) => (
+              <Button
+                key={cat._id}
+                size="sm"
+                variant={selectedCategory === cat.slug ? "default" : "outline"}
+                onClick={() => setSelectedCategory(cat.slug || "")}
+                className="rounded-full px-2.5 py-1.5 text-xs font-medium transition-all duration-200 border border-gray-200 text-gray-700 hover:bg-orange-50 hover:border-orange-200 hover:text-orange-700"
+              >
+                {cat.name}
+              </Button>
+            ))}
+          </div>
+
+          {/* Products Grid - 2 columns on mobile */}
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4 mb-10">
+            {products.map((product, index) => (
+              <ProductCard
+                key={product._id}
+                product={product}
+                onClick={handleProductClick}
+                onWishlistToggle={handleWishlistToggle}
+                onAddToCart={handleAddToCart}
+                onDirectBuy={handleDirectBuy}
+                inWishlist={isInWishlist(product._id)}
+              />
+            ))}
+          </div>
+
+          {/* Load More Button */}
+          {hasMore && (
+            <div className="flex justify-center px-4">
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+                className="border border-gray-300 text-gray-700 px-6 md:px-10 py-3 md:py-4 rounded-full font-medium hover:bg-orange-50 hover:border-orange-200 hover:text-orange-700 transition-all duration-200 text-sm md:text-base shadow-sm hover:shadow w-full md:w-auto"
+              >
+                {loadingMore ? (
+                  <div className="flex items-center gap-2 md:gap-2">
+                    <div className="w-4 h-4 md:w-5 md:h-5 border-2 border-orange-400 border-t-transparent rounded-full animate-spin"></div>
+                    <span className="text-xs md:text-sm">Loading...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <Sparkles className="w-3 h-3 md:w-4 md:h-4" />
+                    <span className="text-xs md:text-sm">Load More Blessings</span>
+                  </div>
+                )}
+              </Button>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Phone Verification Modal for Direct Buy */}
+      <PhoneVerificationModal
+        showPhoneVerification={phoneVerification.showPhoneVerification}
+        phoneNumber={phoneVerification.phoneNumber}
+        setPhoneNumber={phoneVerification.setPhoneNumber}
+        otp={phoneVerification.otp}
+        setOtp={phoneVerification.setOtp}
+        otpInputRefs={phoneVerification.otpInputRefs}
+        otpTimer={phoneVerification.otpTimer}
+        showOTPInput={phoneVerification.showOTPInput}
+        setShowOTPInput={phoneVerification.setShowOTPInput}
+        isVerifyingPhone={phoneVerification.isVerifyingPhone}
+        isVerifyingOTP={phoneVerification.isVerifyingOTP}
+        handlePhoneVerification={phoneVerification.handlePhoneVerification}
+        handleOTPVerification={phoneVerification.handleOTPVerification}
+        handleResendOTP={phoneVerification.handleResendOTP}
+        resetPhoneVerification={phoneVerification.resetPhoneVerification}
+      />
+    </>
+  );
+};
+
+export default FeaturedProducts;
