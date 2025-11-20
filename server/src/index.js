@@ -24,6 +24,7 @@ const ShipRocketrouter = require("./routes/ShiprocketRoutes")
 // FIX: File aur Variable name dono ko Razorpay kiya
 const RazorpayRouter = require("./routes/RazorpayRoutes"); 
 const hamperRouter = require("./routes/CreateHamperRoutes")
+const reviewRouter = require("./routes/reviewRouter");
 
 // ✅ ADD THESE MODEL IMPORTS TO REGISTER THEM WITH MONGOOSE (GOOD PRACTICE)
 require("./models/AddPost");     // Products
@@ -76,6 +77,7 @@ app.use("/notifications", notificationRouter);
 app.use("/shiprocket",ShipRocketrouter);
 app.use("/api/verify",numberVerifyrouter);
 app.use("/hamper",hamperRouter);
+app.use("/review",reviewRouter);
  
 // FIX: Razorpay logic ko '/razorpay' prefix par mount kiya
 app.use("/razorpay", RazorpayRouter); 

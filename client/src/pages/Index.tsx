@@ -5,6 +5,7 @@ import AboutSection from "@/components/AboutSection";
 import Footer from "@/components/Footer";
 import BannerSlider from "@/components/BannerSlider";
 import CategoryGrid from "@/components/CategoryGrid";
+import ServiceHighlights from "@/components/serviceHighlight";
 
 const Index = () => {
   return (
@@ -17,6 +18,7 @@ const Index = () => {
       {/* Rest of the content with pastel purple background */}
       <div className="bg-gradient-to-br from-purple-100/50 via-purple-50/30 to-pink-50/50">
         <CategoryGrid />
+        <ServiceHighlights/>
         <FeaturedProducts />
         <AboutSection/>
         <Footer />

@@ -15,7 +15,7 @@ const Getsignature = async (req, res) => {
       cloudInstance = "primary",
     } = req.body;
     const timestamp = Math.round(new Date().getTime() / 1000);
-    const public_id = `RKSTORE/Product/${Product_category}/${Product_name}_${timestamp}`;
+    const public_id = `DivineMahakal/Product/${Product_category}/${Product_name}_${timestamp}`;
 
     const uploadparams = {
       timestamp,
@@ -138,6 +138,7 @@ const SaveProduct = async (req, res) => {
       Product_available: req.body.Product_available !== false,
       Product_public_id: req.body.Product_public_id || "undcnwe ic jwdn cjw ncjkw cjw",
       Product_slug: category.slug,
+      discounted_price: req.body.discounted_price || "50"
     });
 
     const savedProduct = await newProduct.save();

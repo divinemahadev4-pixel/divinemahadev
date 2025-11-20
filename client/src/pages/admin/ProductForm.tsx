@@ -30,6 +30,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
+  const [discountedPrice, setDiscountedPrice] = useState(""); // ⭐ NEW FIELD
   const [category, setCategory] = useState(categories[0]?.id || "");
   const [images, setImages] = useState<string[]>([]);
   const [isAvailable, setIsAvailable] = useState(true);
@@ -39,7 +40,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // ✅ Enhanced validation
+    // Basic validation
     if (!name.trim()) {
       toast({
         title: "Error",
@@ -68,11 +69,13 @@ const ProductForm: React.FC<ProductFormProps> = ({
     }
 
     setLoading(true);
+
     try {
       const productData = {
         name,
         description,
         price,
+        discounted_price: discountedPrice || null, // ⭐ SEND TO BACKEND
         category,
         images,
         isAvailable,
@@ -80,10 +83,11 @@ const ProductForm: React.FC<ProductFormProps> = ({
 
       await onSubmit(productData);
 
-      // ✅ Reset form after successful submission
+      // Reset form
       setName("");
       setDescription("");
       setPrice("");
+      setDiscountedPrice(""); // ⭐ RESET
       setCategory(categories[0]?.id || "");
       setImages([]);
       setIsAvailable(true);
@@ -97,6 +101,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
       <Card className="border-0 shadow-none">
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Product Name */}
             <div className="space-y-2">
               <Label htmlFor="product-name">Product Name *</Label>
               <Input
@@ -110,6 +115,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
               />
             </div>
 
+            {/* Price */}
             <div className="space-y-2">
               <Label htmlFor="product-price">Price (₹) *</Label>
               <Input
@@ -124,9 +130,24 @@ const ProductForm: React.FC<ProductFormProps> = ({
                 className="h-10"
               />
             </div>
+
+            {/* ⭐ Discounted Price */}
+            <div className="space-y-2">
+              <Label htmlFor="discounted-price">Discounted Price (₹)</Label>
+              <Input
+                id="discounted-price"
+                type="number"
+                value={discountedPrice}
+                onChange={(e) => setDiscountedPrice(e.target.value)}
+                min={0}
+                step="0.01"
+                placeholder="e.g. 799"
+                className="h-10"
+              />
+            </div>
           </div>
 
-          {/* ✅ Product Availability */}
+          {/* Availability */}
           <div className="flex items-center space-x-2">
             <Checkbox
               id="product-available"
@@ -138,6 +159,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
             </Label>
           </div>
 
+          {/* Description */}
           <div className="space-y-2">
             <Label htmlFor="product-description">Description *</Label>
             <Textarea
@@ -150,6 +172,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
             />
           </div>
 
+          {/* Category */}
           <div className="space-y-2">
             <Label htmlFor="product-category">Category *</Label>
             <Select value={category} onValueChange={setCategory} required>
@@ -166,12 +189,14 @@ const ProductForm: React.FC<ProductFormProps> = ({
             </Select>
           </div>
 
+          {/* Images */}
           <div className="space-y-2">
             <Label>Product Images *</Label>
             <ImageUploader
               onUpload={setImages}
               cloudinaryOptions={cloudinaryOptions}
             />
+
             {images.length > 0 && (
               <div className="grid grid-cols-4 gap-4 mt-4">
                 {images.map((url, idx) => (
@@ -190,6 +215,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
             )}
           </div>
 
+          {/* Submit */}
           <Button
             type="submit"
             onClick={handleSubmit}

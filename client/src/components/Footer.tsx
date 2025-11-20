@@ -33,7 +33,7 @@ const LogoBrand = () => (
       <span className="text-lg font-bold tracking-wide text-orange-800 leading-5" style={{ 
         fontFamily: "'Playfair Display', serif"
       }}>
-        Mahadev
+        Mahakal
       </span>
     </div>
   </span>

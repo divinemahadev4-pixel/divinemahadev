@@ -17,7 +17,7 @@ const MotionDiv = prefersReducedMotion ? "div" : motion.div;
 
 // Divine Mahadev Logo - Visible on all screens
 const LogoBrand = () => (
-  <span className="inline-flex items-center gap-3" aria-label="Divine Mahadev Logo">
+  <span className="inline-flex items-center gap-3" aria-label="Divine Mahakal Logo">
     <div className="relative group">
       {/* Logo Container */}
       <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-orange-400 via-orange-500 to-amber-600 shadow-lg flex items-center justify-center border-2 border-orange-300 transform group-hover:scale-105 transition-transform duration-300">
@@ -40,7 +40,7 @@ const LogoBrand = () => (
       <span className="text-lg xs:text-xl font-bold tracking-wide text-orange-800 leading-5 xs:leading-6" style={{ 
         fontFamily: "'Playfair Display', 'Georgia', serif"
       }}>
-        Mahadev
+        Mahakal
       </span>
     </div>
   </span>
@@ -637,7 +637,7 @@ const Header = () => {
                     <span className="text-lg font-bold text-orange-800" style={{ 
                       fontFamily: "'Playfair Display', 'Georgia', serif"
                     }}>
-                      Mahadev
+                      Mahakal
                     </span>
                   </div>
                   <button
@@ -782,7 +782,7 @@ const Header = () => {
                 </div>
 
                 <div className="p-4 border-t border-orange-200 bg-orange-50/60">
-                  <p className="text-xs text-center text-orange-500">© 2025 Divine Mahadev. Blessed with divine energy. Har Har Mahadev! 🙏</p>
+                  <p className="text-xs text-center text-orange-500">© 2025 Divine Mahakal. Blessed with divine energy. Har Har Mahadev! 🙏</p>
                 </div>
               </div>
             </MotionDiv>

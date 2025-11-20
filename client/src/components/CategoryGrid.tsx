@@ -82,7 +82,7 @@ const CategoryGridModern: React.FC = () => {
             .fill(0)
             .map((_, i) => (
               <div key={i} className="flex flex-col items-center space-y-3">
-                <Skeleton className="w-24 h-24 rounded-full bg-orange-100 animate-pulse" />
+                <Skeleton className="w-24 h-24 rounded-xl bg-orange-100 animate-pulse" />
                 <Skeleton className="w-20 h-3 rounded-full bg-orange-200" />
               </div>
             ))}
@@ -143,9 +143,9 @@ const CategoryGridModern: React.FC = () => {
               className="flex flex-col items-center cursor-pointer flex-shrink-0 w-40 snap-center group"
               onClick={() => navigate(`/category/${category.slug}`)}
             >
-              {/* Round Card Container - Smaller */}
-              <div className="relative rounded-full overflow-hidden bg-gradient-to-br from-white to-orange-50/70 shadow-md border-2 border-orange-200/50 group-hover:border-orange-300 transition-all duration-400 w-32 h-32 mb-3">
-                <div className="absolute inset-0 rounded-full overflow-hidden">
+              {/* Square Card Container - Changed from rounded-full to rounded-xl */}
+              <div className="relative rounded-xl overflow-hidden bg-gradient-to-br from-white to-orange-50/70 shadow-md border-2 border-orange-200/50 group-hover:border-orange-300 transition-all duration-400 w-32 h-32 mb-3">
+                <div className="absolute inset-0 rounded-xl overflow-hidden">
                   <img
                     src={category.image || "/fallback.jpg"}
                     alt={category.name}
@@ -153,11 +153,11 @@ const CategoryGridModern: React.FC = () => {
                     loading="lazy"
                   />
                   {/* Spiritual Gradient Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-orange-50/20 to-orange-100/40 rounded-full" />
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-orange-50/20 to-orange-100/40 rounded-xl" />
                   
                   {/* Sacred Symbol Overlay - Smaller */}
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-400">
-                    <div className="w-12 h-12 bg-orange-500/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                    <div className="w-12 h-12 bg-orange-500/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
                       <ShoppingCart className="w-4 h-4 text-orange-700" />
                     </div>
                   </div>
@@ -165,7 +165,7 @@ const CategoryGridModern: React.FC = () => {
 
                 {/* Product Count Badge - Smaller */}
                 {category.productCount !== undefined && (
-                  <Badge className="absolute top-2 right-2 bg-orange-600 text-white font-semibold px-1.5 py-0.5 rounded-full text-xs shadow-md">
+                  <Badge className="absolute top-2 right-2 bg-orange-600 text-white font-semibold px-1.5 py-0.5 rounded-lg text-xs shadow-md">
                     {category.productCount}
                   </Badge>
                 )}
@@ -177,7 +177,7 @@ const CategoryGridModern: React.FC = () => {
                   {category.name}
                 </h3>
                 <Button 
-                  className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white px-4 py-1.5 rounded-full text-xs font-medium shadow-sm hover:shadow transition-all duration-300"
+                  className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white px-4 py-1.5 rounded-lg text-xs font-medium shadow-sm hover:shadow transition-all duration-300"
                   size="sm"
                 >
                   Explore

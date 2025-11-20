@@ -21,6 +21,7 @@ interface ApiProduct {
   _id: string;
   Product_name: string;
   Product_price: number;
+  discounted_price: number; // New field - this is the actual price
   Product_image: string[];
   Product_rating?: number;
   isNew?: boolean;
@@ -61,6 +62,18 @@ const ProductCard: React.FC<{
   const [adding, setAdding] = useState(false);
   const [buying, setBuying] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  
+  // Calculate discount percentage
+  const discountPercentage = useMemo(() => {
+    if (product.discounted_price && product.Product_price > product.discounted_price) {
+      return Math.round(((product.Product_price - product.discounted_price) / product.Product_price) * 100);
+    }
+    return 0;
+  }, [product.Product_price, product.discounted_price]);
+
+  // Get prices - Product_price is original price, discounted_price is current price
+  const originalPrice = product.Product_price; // Original/higher price
+  const currentPrice = product.discounted_price || product.Product_price; // Current selling price
   
   const handleAdd = () => {
     if (adding) return;
@@ -117,13 +130,27 @@ const ProductCard: React.FC<{
         {/* Subtle overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/5 to-white/10" />
         
-        {/* Product Status Badges - Only NEW badge remains */}
-        <div className="absolute top-3 right-3">
-          {product.isNew && (
+        {/* Product Status Badges */}
+        <div className="absolute top-3 right-3 flex flex-col gap-2">
+          {/* Discount Badge */}
+          {discountPercentage > 0 && (
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", stiffness: 200, delay: 0.1 }}
+            >
+              <Badge className="bg-gradient-to-r from-red-500 to-pink-600 text-white font-semibold text-xs px-2 py-1 border-0 shadow-sm">
+                {discountPercentage}% OFF
+              </Badge>
+            </motion.div>
+          )}
+          
+          {/* NEW Badge */}
+          {product.isNew && (
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
             >
               <Badge className="bg-gradient-to-r from-emerald-400 to-green-500 text-white font-semibold text-xs px-2 py-1 border-0 shadow-sm">
                 <Zap className="w-3 h-3 mr-1" />
@@ -168,12 +195,31 @@ const ProductCard: React.FC<{
         </p>
         
         <div className="mt-auto space-y-3">
-          {/* Clean Price Section */}
-          <div className="flex items-baseline justify-between">
-            <span className="text-base font-bold text-orange-600">{currency(product.Product_price)}</span>
+          {/* Price Section with Discount - FIXED: Current price is main, original price is striked */}
+          <div className="space-y-1">
+            {/* Current Price */}
+            <div className="flex items-baseline gap-2">
+              <span className="text-base font-bold text-orange-600">{currency(currentPrice)}</span>
+              
+              {/* Original Price with strikethrough if discount exists */}
+              {discountPercentage > 0 && (
+                <span className="text-xs text-gray-500 line-through">
+                  {currency(originalPrice)}
+                </span>
+              )}
+            </div>
+            
+            {/* Discount Percentage */}
+            {discountPercentage > 0 && (
+              <div className="flex items-center">
+                <span className="text-xs font-medium text-green-600 bg-green-50 px-1.5 py-0.5 rounded">
+                  You save {currency(originalPrice - currentPrice)}
+                </span>
+              </div>
+            )}
           </div>
 
-          {/* Action Buttons - Changed from row to column */}
+          {/* Action Buttons */}
           <div className="space-y-2">
             {/* Add to Cart Button */}
             <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
@@ -323,15 +369,21 @@ const FeaturedProducts: React.FC = () => {
   const handleAddToCart = useCallback(
     (product: ApiProduct) => {
       if (!user) return navigate("/login");
+      
+      // FIXED: Use discounted_price as current price, Product_price as original price
+      const currentPrice = product.discounted_price || product.Product_price;
+      const originalPrice = product.Product_price;
+      
       addToCart({
         id: parseInt(product._id.slice(-8), 16),
         _id: product._id,
         name: product.Product_name,
-        price: currency(product.Product_price),
-        originalPrice: currency(product.Product_price),
+        price: currency(currentPrice), // Current price (discounted_price if available)
+        originalPrice: currency(originalPrice), // Original price (Product_price)
         image: product.Product_image[0] || "",
         isNew: product.isNew || false,
         quantity: 1,
+        discounted_price: product.discounted_price, // Include discounted price in cart item
       });
       toast({
         title: "Added to divine cart",
@@ -370,10 +422,14 @@ const FeaturedProducts: React.FC = () => {
       return;
     }
 
+    // FIXED: Use current price (discounted_price if available) for payment
+    const currentPrice = product.discounted_price || product.Product_price;
+
     const orderItems = [{
       productId: product._id,
       quantity: 1,
-      price: product.Product_price,
+      price: currentPrice, // Use the current price (discounted_price if available)
+      originalPrice: product.Product_price, // Include original price
       name: product.Product_name,
       image: product.Product_image[0] || ""
     }];
@@ -392,11 +448,11 @@ const FeaturedProducts: React.FC = () => {
       shippingAddress,
       "online", // Default to online payment for direct buy
       {
-        itemsTotal: product.Product_price,
+        itemsTotal: currentPrice,
         deliveryCharge: 0,
-        totalAmount: product.Product_price
+        totalAmount: currentPrice
       },
-      // "direct_buy"
+      "direct_buy"
     );
 
     if (success) {

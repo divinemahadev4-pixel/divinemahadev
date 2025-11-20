@@ -20,6 +20,10 @@ const AddPostSchema = new Schema(
       max: 100000,
       required: true,
     },
+    discounted_price:{
+      type:Number,
+      required:true
+    },
     Product_image: [
       {
         type: String,

@@ -19,6 +19,39 @@ const PREFERS_REDUCED_MOTION =
   window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
 const SWIPER_MODULES = [Autoplay, Pagination, EffectFade, Navigation];
 
+// Below your banner component, insert this component
+// Copy-paste ready scrolling line with orange bg, white text, shadow, emojis
+
+export const BannerScrollingLine = () => {
+  return (
+    <div className="w-full overflow-hidden bg-orange-500 py-2 shadow-md">
+      <div
+        className="whitespace-nowrap animate-scroll font-semibold text-white text-sm flex items-center gap-8 px-4 drop-shadow-[0_0_4px_black]"
+      >
+        <span className="bg-white/20 px-2 py-1 rounded-md shadow-sm">🚚 Free Shipping All Over India</span>
+        <span>🔥 Cash on Delivery Available</span>
+        <span>💳 15% OFF on Prepaid Orders</span>
+        <span>🛕 Trusted Divine Seller</span>
+        <span>✨ सच्‍चाई और गुणवत्ता का वादा</span>
+      </div>
+      <style>
+        {`
+          @keyframes scrollAnim {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+          }
+          .animate-scroll {
+            animation: scrollAnim 18s linear infinite;
+          }
+        `}
+      </style>
+    </div>
+  );
+};
+
+// USAGE: Put <BannerScrollingLine /> just BELOW your banner slider
+
+
 interface Banner {
   _id: string;
   BannerUrl: string;
@@ -272,6 +305,7 @@ const BannerSlider: React.FC<BannerSliderProps> = ({
             </Button>
           </>
         )}
+        <BannerScrollingLine/>
       </div>
       <style
         dangerouslySetInnerHTML={{

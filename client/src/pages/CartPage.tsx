@@ -8,7 +8,7 @@ import { Label } from "../components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import axiosInstance from "@/utils/axiosConfig";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Minus, Plus, Trash2, ShoppingBag, Truck, Lock, Sparkles, Sun } from "lucide-react";
+import { X, Minus, Plus, Trash2, ShoppingBag, Truck, Lock, Sparkles, Sun, CreditCard } from "lucide-react";
 
 // New imports for phone verification and payment processing
 import { usePhoneVerification } from "@/hooks/usePhoneVerification";
@@ -37,6 +37,16 @@ const CartPage = () => {
   const getProductId = (item: any) => item._id || item.id;
   const totalPrice = getCartTotal();
   const DELIVERY_CHARGE = 0;
+
+  // Calculate 15% discount for online payments
+  const calculateOnlineDiscount = (amount: number) => {
+    return amount * 0.15; // 15% discount
+  };
+
+  const getOnlineDiscountedPrice = (amount: number) => {
+    const discount = calculateOnlineDiscount(amount);
+    return amount - discount;
+  };
 
   useEffect(() => {
     if (phoneVerification.phoneVerified) {
@@ -101,6 +111,15 @@ const CartPage = () => {
     }));
 
     const deliveryCharge = 0;
+    
+    // Calculate final amount based on payment method
+    let finalAmount = totalPrice + deliveryCharge;
+    let discountAmount = 0;
+    
+    if (paymentMethod === "online") {
+      discountAmount = calculateOnlineDiscount(totalPrice);
+      finalAmount = getOnlineDiscountedPrice(totalPrice) + deliveryCharge;
+    }
 
     const success = await processPayment(
       orderItems,
@@ -109,7 +128,8 @@ const CartPage = () => {
       {
         itemsTotal: totalPrice,
         deliveryCharge: deliveryCharge,
-        totalAmount: totalPrice + deliveryCharge
+        totalAmount: finalAmount,
+        discountAmount: discountAmount
       },
       "cart"
     );
@@ -119,6 +139,21 @@ const CartPage = () => {
       setIsCheckingOut(false);
       setSelectedPaymentMethod(null);
       phoneVerification.resetPhoneVerification();
+      
+      // Show success message with discount info
+      if (paymentMethod === "online") {
+        toast({
+          title: "Order Placed Successfully! 🎉",
+          description: `You saved ₹${discountAmount.toLocaleString()} with online payment!`,
+          duration: 3000,
+        });
+      } else {
+        toast({
+          title: "Order Placed Successfully!",
+          description: "Your divine items are on their way",
+          duration: 2000,
+        });
+      }
     }
   };
 
@@ -314,10 +349,24 @@ const CartPage = () => {
                     <span className="font-semibold text-green-600">FREE</span>
                   </div>
 
+                  {/* Online Payment Discount Info */}
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <CreditCard className="w-4 h-4 text-green-600" />
+                      <span className="text-sm font-semibold text-green-700">Online Payment Offer</span>
+                    </div>
+                    <p className="text-xs text-green-600">
+                      Get 15% OFF when you pay online! Save ₹{calculateOnlineDiscount(totalPrice).toLocaleString()}
+                    </p>
+                  </div>
+
                   <div className="border-t border-orange-200 pt-3">
                     <div className="flex justify-between items-center text-lg font-bold">
                       <span className="text-orange-900">Total Amount</span>
                       <span className="text-orange-600">₹{totalPrice.toLocaleString()}</span>
+                    </div>
+                    <div className="text-sm text-green-600 font-semibold mt-1">
+                      Pay only ₹{getOnlineDiscountedPrice(totalPrice).toLocaleString()} with online payment!
                     </div>
                   </div>
                 </div>
@@ -409,9 +458,28 @@ const CartPage = () => {
                       <span>Delivery</span>
                       <span>FREE</span>
                     </div>
+                    
+                    {/* Online Payment Discount Display */}
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-3 mt-2">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-green-700 font-semibold text-sm">Online Payment Discount (15%)</span>
+                        <span className="text-green-700 font-bold">-₹{calculateOnlineDiscount(totalPrice).toLocaleString()}</span>
+                      </div>
+                      <p className="text-xs text-green-600">
+                        Pay online and save big on your divine purchase!
+                      </p>
+                    </div>
+                    
                     <div className="flex justify-between font-bold text-base text-orange-700 pt-2 border-t border-orange-200">
                       <span>Total Amount</span>
-                      <span>₹{totalPrice.toLocaleString()}</span>
+                      <div className="text-right">
+                        <div className="text-gray-500 text-sm line-through">
+                          ₹{totalPrice.toLocaleString()}
+                        </div>
+                        <div className="text-green-600">
+                          ₹{getOnlineDiscountedPrice(totalPrice).toLocaleString()} (Online)
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -493,10 +561,11 @@ const CartPage = () => {
 
               {/* Payment Buttons */}
               <div className="flex-shrink-0 bg-white border-t border-orange-200 p-6 space-y-3 rounded-b-2xl">
+                {/* Online Payment Button with Discount */}
                 <Button
                   onClick={() => handlePaymentSelection('online')}
                   disabled={checkoutLoading}
-                  className="w-full h-12 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                  className="w-full h-12 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
                 >
                   {checkoutLoading ? (
                     <div className="flex items-center justify-center gap-2">
@@ -505,12 +574,16 @@ const CartPage = () => {
                     </div>
                   ) : (
                     <div className="flex items-center justify-center gap-2">
-                      <Lock className="w-5 h-5" />
-                      Pay Online - ₹{totalPrice.toLocaleString()}
+                      <CreditCard className="w-5 h-5" />
+                      <div className="text-left">
+                        <div className="text-sm">Pay Online</div>
+                        <div className="text-xs opacity-90">Save 15% - ₹{getOnlineDiscountedPrice(totalPrice).toLocaleString()}</div>
+                      </div>
                     </div>
                   )}
                 </Button>
 
+                {/* COD Button */}
                 <Button
                   onClick={() => handlePaymentSelection('cod')}
                   disabled={checkoutLoading}
@@ -525,7 +598,10 @@ const CartPage = () => {
                   ) : (
                     <div className="flex items-center justify-center gap-2">
                       <Truck className="w-5 h-5" />
-                      Cash on Delivery - ₹{totalPrice.toLocaleString()}
+                      <div className="text-left">
+                        <div className="text-sm">Cash on Delivery</div>
+                        <div className="text-xs opacity-90">₹{totalPrice.toLocaleString()}</div>
+                      </div>
                     </div>
                   )}
                 </Button>
