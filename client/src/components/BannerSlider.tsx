@@ -1,10 +1,10 @@
-import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Pagination, EffectFade, Navigation } from "swiper/modules";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronLeft, ChevronRight, Play, Pause, Sparkles } from "lucide-react";
+import { ChevronLeft, ChevronRight, Play, Pause, Sparkles, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Swiper as SwiperType } from "swiper";
 import "swiper/css";
@@ -19,41 +19,59 @@ const PREFERS_REDUCED_MOTION =
   window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
 const SWIPER_MODULES = [Autoplay, Pagination, EffectFade, Navigation];
 
-// Below your banner component, insert this component
-// Copy-paste ready scrolling line with orange bg, white text, shadow, emojis
-
+// --- IMPROVED SCROLLING LINE COMPONENT ---
 export const BannerScrollingLine = () => {
+  const items = [
+    { icon: "🚚", text: "Free Shipping All Over India" },
+    { icon: "💰", text: "Cash on Delivery Available" },
+    { icon: "🎁", text: "15% OFF on Prepaid Orders" },
+    { icon: "🙏", text: "Trusted Divine Seller" },
+    { icon: "⭐", text: "100% Authentic Products" },
+    { icon: "✨", text: "सच्‍चाई और गुणवत्ता का वादा" },
+    { icon: "🕉️", text: "Blessed with Divine Energy" },
+    { icon: "📦", text: "Secure Packaging" },
+  ];
+
+  // Duplicate items for seamless infinite scroll
+  const marqueeItems = [...items, ...items];
+
   return (
-    <div className="w-full overflow-hidden bg-gradient-to-r from-orange-500 via-orange-600 to-orange-500 py-2.5 shadow-md">
-      <div
-        className="whitespace-nowrap animate-scroll font-semibold text-white text-sm flex items-center gap-8 px-4 drop-shadow-[0_0_4px_black]"
-      >
-        <span className="bg-white/20 px-3 py-1 rounded-md shadow-sm">🚚 Free Shipping All Over India</span>
-        <span>💰 Cash on Delivery Available</span>
-        <span>🎁 15% OFF on Prepaid Orders</span>
-        <span>🙏 Trusted Divine Seller</span>
-        <span>⭐ 100% Authentic Products</span>
-        <span>✨ सच्‍चाई और गुणवत्ता का वादा</span>
-        <span>🕉️ Blessed with Divine Energy</span>
-        <span>📦 Secure Packaging</span>
+    <div className="relative w-full overflow-hidden bg-gradient-to-r from-orange-600 via-amber-500 to-orange-600 shadow-lg z-20 border-y border-orange-400/30">
+      {/* Left Fade */}
+      <div className="absolute left-0 top-0 h-full w-12 bg-gradient-to-r from-orange-600 to-transparent z-10 pointer-events-none" />
+      
+      <div className="flex py-3 whitespace-nowrap overflow-hidden group">
+        <div className="flex animate-scroll items-center group-hover:[animation-play-state:paused]">
+          {marqueeItems.map((item, index) => (
+            <div key={index} className="flex items-center mx-6 select-none">
+              <span className="text-xl mr-2 drop-shadow-sm filter">{item.icon}</span>
+              <span className="text-sm md:text-base font-bold text-white tracking-wide drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)] uppercase">
+                {item.text}
+              </span>
+              <span className="ml-6 text-orange-200/50 text-xs">•</span>
+            </div>
+          ))}
+        </div>
       </div>
+
+      {/* Right Fade */}
+      <div className="absolute right-0 top-0 h-full w-12 bg-gradient-to-l from-orange-600 to-transparent z-10 pointer-events-none" />
+
       <style>
         {`
-          @keyframes scrollAnim {
-            0% { transform: translateX(100%); }
-            100% { transform: translateX(-100%); }
+          @keyframes scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
           }
           .animate-scroll {
-            animation: scrollAnim 25s linear infinite;
+            animation: scroll 40s linear infinite;
+            width: max-content;
           }
         `}
       </style>
     </div>
   );
 };
-
-// USAGE: Put <BannerScrollingLine /> just BELOW your banner slider
-
 
 interface Banner {
   _id: string;
@@ -77,27 +95,22 @@ interface BannerSliderProps {
 }
 
 const BannerSkeleton: React.FC<{ className?: string; headerHeight?: number }> = ({ className }) => (
-  <div className={`w-full relative ${className || ""} pt-16`}>
-    <div className="w-full relative overflow-hidden bg-orange-50">
-      <Skeleton className="w-full h-full bg-gradient-to-br from-orange-100 to-amber-50" style={{ aspectRatio: "16/9", maxHeight: "550px" }} />
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex space-x-2">
-        {[0, 1, 2].map((i) => (
-          <Skeleton key={i} className="w-2 h-2 rounded-full bg-white/60" />
-        ))}
-      </div>
+  <div className={`w-full relative ${className || ""} mt-4 mb-8`}>
+    <div className="w-full relative overflow-hidden rounded-xl md:rounded-2xl bg-orange-50 mx-auto max-w-[98%]">
+      <Skeleton className="w-full h-full bg-gradient-to-br from-orange-100 to-amber-50" style={{ aspectRatio: "21/9", minHeight: "200px" }} />
     </div>
   </div>
 );
 
 const BannerError: React.FC<{ className?: string; headerHeight?: number; onRetry?: () => void }> = ({ className, onRetry }) => (
-  <div className={`w-full relative ${className || ""} pt-16`}>
+  <div className={`w-full relative ${className || ""} py-10`}>
     <div className="w-full max-w-4xl mx-auto px-4">
-      <Card className="p-8 text-center bg-gradient-to-br from-orange-50/50 to-amber-50/70 border-orange-200 shadow-inner">
+      <Card className="p-8 text-center bg-gradient-to-br from-orange-50/50 to-amber-50/70 border-orange-200 shadow-inner rounded-xl">
         <Sparkles className="w-12 h-12 text-orange-500 mx-auto mb-4" />
         <h3 className="text-xl font-semibold text-orange-800 mb-2">Unable to load divine banners</h3>
         <p className="text-orange-600 mb-4">Please check your connection and try again</p>
         {onRetry && (
-          <Button onClick={onRetry} className="bg-gradient-to-r from-orange-600 to-amber-600 text-white hover:from-orange-700 hover:to-amber-700 rounded-lg">
+          <Button onClick={onRetry} className="bg-gradient-to-r from-orange-600 to-amber-600 text-white hover:from-orange-700 hover:to-amber-700 rounded-lg shadow-md">
             Try Again
           </Button>
         )}
@@ -109,7 +122,7 @@ const BannerError: React.FC<{ className?: string; headerHeight?: number; onRetry
 const BannerSlider: React.FC<BannerSliderProps> = ({
   className = "",
   headerHeight = 80,
-  autoplayDelay = 4000,
+  autoplayDelay = 5000,
   showPlayPause = true,
 }) => {
   const [banners, setBanners] = useState<Banner[]>([]);
@@ -213,32 +226,33 @@ const BannerSlider: React.FC<BannerSliderProps> = ({
 
   return (
     <motion.section
-      className={`w-full relative ${className} pt-16`}
-      initial={PREFERS_REDUCED_MOTION ? undefined : { opacity: 0, y: 12 }}
-      animate={PREFERS_REDUCED_MOTION ? undefined : { opacity: 1, y: 0 }}
-      transition={PREFERS_REDUCED_MOTION ? undefined : { duration: 0.25 }}
+      className={`w-full relative ${className} flex flex-col gap-0`}
+      initial={PREFERS_REDUCED_MOTION ? undefined : { opacity: 0 }}
+      animate={PREFERS_REDUCED_MOTION ? undefined : { opacity: 1 }}
+      transition={PREFERS_REDUCED_MOTION ? undefined : { duration: 0.4 }}
     >
-      {showPlayPause && (
-        <div className="absolute top-4 right-4 z-30 flex items-center space-x-4">
-          <div className="hidden md:flex items-center space-x-2 text-sm text-orange-800/80 bg-orange-50/80 backdrop-blur-sm rounded-full px-3 py-1 border border-orange-200 shadow">
-            <span className="font-medium text-orange-900">{String(currentSlide + 1).padStart(2, "0")}</span>
-            <span>/</span>
-            <span>{String(banners.length).padStart(2, "0")}</span>
+      {/* --- Main Slider Container --- */}
+      <div className="w-full relative group">
+        
+        {/* Controls Overlay */}
+        {showPlayPause && banners.length > 1 && (
+          <div className="absolute top-4 right-4 z-30 flex items-center space-x-2 pointer-events-none">
+            <div className="pointer-events-auto hidden md:flex items-center space-x-2 text-xs font-bold text-orange-900 bg-white/80 backdrop-blur-md rounded-full px-3 py-1.5 border border-orange-200/50 shadow-lg">
+              <span>{String(currentSlide + 1).padStart(2, "0")}</span>
+              <span className="text-orange-400">/</span>
+              <span>{String(banners.length).padStart(2, "0")}</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={togglePlayPause}
+              className="pointer-events-auto w-8 h-8 bg-white/80 backdrop-blur-md hover:bg-white text-orange-700 rounded-full shadow-md border border-orange-200/50 transition-all hover:scale-110"
+            >
+              {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 ml-0.5" />}
+            </Button>
           </div>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={togglePlayPause}
-            className="hidden md:flex items-center space-x-2 bg-orange-100 border border-orange-300 text-orange-800 hover:bg-orange-200 rounded-full"
-            aria-label={isPlaying ? "Pause slideshow" : "Play slideshow"}
-          >
-            {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-            <span className="text-xs">{isPlaying ? "Pause" : "Play"}</span>
-          </Button>
-        </div>
-      )}
+        )}
 
-      <div className="w-full relative overflow-hidden bg-gradient-to-br from-orange-50 to-amber-50">
         <Swiper
           modules={SWIPER_MODULES}
           spaceBetween={0}
@@ -246,25 +260,22 @@ const BannerSlider: React.FC<BannerSliderProps> = ({
           loop={banners.length > 1}
           effect={swiperEffect}
           fadeEffect={swiperFadeEffect as any}
-          speed={450}
+          speed={700}
           autoplay={swiperAutoplay as any}
           pagination={{
             clickable: true,
-            bulletClass: "swiper-pagination-bullet !bg-orange-200 !w-2 !h-2 !rounded-full opacity-80",
-            bulletActiveClass: "swiper-pagination-bullet-active !bg-orange-700 !w-8 !h-2 !rounded-full shadow",
-            renderBullet: (index: number, className: string): string =>
-              `<span class="${className} cursor-pointer hover:!bg-orange-400" aria-label="Go to slide ${index + 1}"></span>`,
+            bulletClass: "swiper-pagination-bullet !bg-white/40 !w-2 !h-2 !rounded-full transition-all duration-300 backdrop-blur-sm border border-white/20",
+            bulletActiveClass: "swiper-pagination-bullet-active !bg-gradient-to-r !from-orange-500 !to-amber-500 !w-8 !h-2 !rounded-full shadow-[0_0_10px_rgba(245,158,11,0.5)] !opacity-100",
           }}
           navigation={swiperNavigation as any}
           onSwiper={handleSwiperInit}
           onSlideChange={handleSlideChange}
-          className="w-full group banner-slider"
-          style={{ aspectRatio: "16/9" }}
+          className="w-full banner-slider z-10"
         >
           {banners.map((banner, index) => (
-            <SwiperSlide key={banner._id} className="relative">
+            <SwiperSlide key={banner._id} className="relative bg-orange-50">
               <div
-                className="relative w-full h-full overflow-hidden cursor-pointer banner-slide"
+                className="relative w-full h-full overflow-hidden cursor-pointer banner-slide group-slide"
                 onClick={() =>
                   banner.BannerLink && window.open(banner.BannerLink, "_blank", "noopener,noreferrer")
                 }
@@ -272,129 +283,81 @@ const BannerSlider: React.FC<BannerSliderProps> = ({
                 <img
                   src={banner.BannerUrl}
                   alt={banner.BannerTitle || `Divine Banner ${index + 1}`}
-                  className="w-full h-full object-cover object-center transition-transform duration-[5000ms] hover:scale-105 rounded-xl border border-orange-100 shadow-xs"
+                  className="w-full h-full object-cover object-center transition-transform duration-[8000ms] ease-linear group-slide-hover:scale-105"
                   loading={index === 0 ? "eager" : "lazy"}
                   decoding={index === 0 ? "sync" : "async"}
                   width={1920}
-                  height={1080}
+                  height={800}
                   onError={handleImageError}
-                  style={{ objectPosition: "center center", minHeight: "100%", minWidth: "100%" }}
                 />
-                {/* Spiritual Overlay Gradient */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-orange-50/10 to-transparent pointer-events-none" />
-                {/* Sacred Border Effect */}
-                <div className="absolute inset-0 rounded-xl border-2 border-orange-200/30 pointer-events-none" />
+                
+                {/* Warm Golden Overlay for Divine Feel */}
+                <div className="absolute inset-0 bg-gradient-to-t from-orange-900/20 via-transparent to-orange-100/5 pointer-events-none mix-blend-overlay" />
+                
+                {/* Bottom Gradient for Pagination Visibility */}
+                <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-black/30 to-transparent pointer-events-none" />
               </div>
             </SwiperSlide>
           ))}
         </Swiper>
+
+        {/* Custom Navigation Arrows (Glassmorphism) */}
         {banners.length > 1 && (
           <>
             <Button
-              variant="secondary"
-              size="icon"
-              className="swiper-button-prev-custom absolute left-6 md:left-10 top-1/2 -translate-y-1/2 z-20 w-14 h-14 bg-white/70 border border-orange-200 text-orange-700 hover:bg-orange-200 transition-all duration-200 opacity-80 hover:opacity-100 rounded-full shadow-lg"
-              aria-label="Previous slide"
+              variant="ghost"
+              className="swiper-button-prev-custom absolute left-4 top-1/2 -translate-y-1/2 z-20 hidden md:flex items-center justify-center w-12 h-12 rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-md border border-white/30 text-white transition-all duration-300 hover:scale-110 shadow-[0_4px_15px_rgba(0,0,0,0.1)]"
             >
-              <ChevronLeft className="w-7 h-7" />
+              <ChevronLeft className="w-8 h-8 stroke-[3]" />
             </Button>
             <Button
-              variant="secondary"
-              size="icon"
-              className="swiper-button-next-custom absolute right-6 md:right-10 top-1/2 -translate-y-1/2 z-20 w-14 h-14 bg-white/70 border border-orange-200 text-orange-700 hover:bg-orange-200 transition-all duration-200 opacity-80 hover:opacity-100 rounded-full shadow-lg"
-              aria-label="Next slide"
+              variant="ghost"
+              className="swiper-button-next-custom absolute right-4 top-1/2 -translate-y-1/2 z-20 hidden md:flex items-center justify-center w-12 h-12 rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-md border border-white/30 text-white transition-all duration-300 hover:scale-110 shadow-[0_4px_15px_rgba(0,0,0,0.1)]"
             >
-              <ChevronRight className="w-7 h-7" />
+              <ChevronRight className="w-8 h-8 stroke-[3]" />
             </Button>
           </>
         )}
-        <BannerScrollingLine/>
       </div>
+
+      {/* --- Scrolling Line Below Slider --- */}
+      <BannerScrollingLine />
+
       <style
         dangerouslySetInnerHTML={{
           __html: `
             .banner-slider { 
-              aspect-ratio: 16/9; 
-              max-height: 550px; 
-              border-radius: 16px;
+              /* Responsive Aspect Ratio calculation */
+              height: auto;
+              aspect-ratio: 16/9;
             }
-            .banner-slider .swiper-pagination { 
-              bottom: 20px !important; 
-              z-index: 10; 
-            }
-            .banner-slider .swiper-pagination-bullet { 
-              margin: 0 4px !important; 
-              transition: all 0.3s; 
-              background: #fed7aa !important;
-            }
-            .banner-slider .swiper-pagination-bullet:hover { 
-              transform: scale(1.13) !important; 
-              background: #ea580c !important; 
-            }
-            .banner-slider .swiper-pagination-bullet-active { 
-              opacity: 1 !important; 
-              background: #c2410c !important;
-              box-shadow: 0 0 10px rgba(234, 88, 12, 0.3);
-            }
-            .banner-slide { 
-              position: relative; 
-              aspect-ratio: 16/9; 
-              border-radius: 16px;
-            }
-            .banner-slider .swiper-slide img { 
-              filter: brightness(1) contrast(1.01) saturate(1.01); 
-              border-radius: 16px;
-            }
-            .swiper-button-prev-custom,
-            .swiper-button-next-custom {
-              box-shadow: 0 4px 12px rgba(234, 88, 12, 0.15);
-              backdrop-filter: blur(8px);
-            }
-            .swiper-button-prev-custom:hover,
-            .swiper-button-next-custom:hover {
-              box-shadow: 0 6px 16px rgba(234, 88, 12, 0.25);
-              transform: scale(1.05);
+            @media (min-width: 1024px) {
+               .banner-slider { 
+                 aspect-ratio: 21/9; /* Wider on desktop */
+                 max-height: 600px;
+               }
             }
             @media (max-width: 640px) {
               .banner-slider { 
-                aspect-ratio: 3/2; 
-                max-height: 300px; 
-                min-height: 200px; 
-                border-radius: 12px;
-              }
-              .banner-slide { 
-                aspect-ratio: 3/2; 
-                border-radius: 12px;
-              }
-              .banner-slider .swiper-pagination { 
-                bottom: 14px !important; 
-              }
-              .swiper-button-prev-custom,
-              .swiper-button-next-custom {
-                width: 12px !important;
-                height: 12px !important;
-                left: 4px !important;
-                right: 4px !important;
+                aspect-ratio: 4/3; /* Taller on mobile for impact */
+                max-height: 500px;
               }
             }
-            @media (max-width: 480px) {
-              .banner-slider { 
-                aspect-ratio: 4/3; 
-                max-height: 200px; 
-                min-height: 160px; 
-                border-radius: 10px;
-              }
-              .banner-slide { 
-                aspect-ratio: 4/3; 
-                border-radius: 10px;
-              }
+
+            .banner-slider .swiper-pagination { 
+              bottom: 24px !important; 
+              z-index: 25; 
             }
-            @media (max-width: 360px) {
-              .banner-slider { 
-                max-height: 140px; 
-                min-height: 110px; 
-                border-radius: 8px;
-              }
+            
+            .group-slide:hover img {
+                transform: scale(1.05);
+            }
+
+            /* Hide navigation on very small screens */
+            .swiper-button-prev-custom.swiper-button-disabled,
+            .swiper-button-next-custom.swiper-button-disabled {
+              opacity: 0.3;
+              pointer-events: none;
             }
           `,
         }}
