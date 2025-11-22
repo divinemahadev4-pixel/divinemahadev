@@ -8,6 +8,8 @@ import { motion } from "framer-motion";
 import AnnouncementBar from "@/components/AnnouncementBar";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import ServiceHighlights from "@/components/serviceHighlight";
+
 import { Button } from "@/components/ui/button";
 import { useWishlist } from "@/components/WishlistContext";
 import { useCart } from "@/components/CartContext";
@@ -555,6 +557,7 @@ const CategoryPage = () => {
         )}
       </div>
 
+      <ServiceHighlights />
       <Footer />
 
       {/* Phone Verification Modal for Direct Buy */}

@@ -28,6 +28,7 @@ import MainLayout from "./components/MainLayout";
 import Profile from "./pages/Profile";
 import GoogleCallback from "./pages/GoogleCallback";
 import Orders from "./pages/Orders";
+import OrderConfirmation from "./pages/OrderConfirmation";
 import CustomHamperBuilder from "./pages/CustomHamperBuilder";
 import PaymentCallback from './components/PaymentCallback';
 import Privacy from './components/PRIVACY';
@@ -85,7 +86,8 @@ const App = () => (
 
                 <Route path="profile" element={<Profile />} />
                 <Route path="orders" element={<Orders />} />
-                 <Route path="/payment/callback" element={<PaymentCallback />} />
+                <Route path="order-confirmation/:orderId" element={<OrderConfirmation />} />
+                <Route path="/payment/callback" element={<PaymentCallback />} />
 
                 <Route path="*" element={<NotFound />} />
                  <Route path={"/privacy"} element={<Privacy/>}/>

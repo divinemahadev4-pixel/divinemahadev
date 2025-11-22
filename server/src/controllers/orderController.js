@@ -440,6 +440,66 @@ const updatePaymentStatus = async (req, res) => {
   }
 };
 
+// Allow user to cancel their own order
+const cancelOrderByUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid order ID",
+      });
+    }
+
+    const order = await Order.findById(id);
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
+
+    if (order.userId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to cancel this order",
+      });
+    }
+
+    if (["shipped", "delivered", "cancelled", "failed"].includes(order.status)) {
+      return res.status(400).json({
+        success: false,
+        message: "This order can no longer be cancelled",
+      });
+    }
+
+    order.status = "cancelled";
+    await order.save();
+
+    await createNotification(
+      order.userId,
+      "Order Cancelled",
+      `Order #${order._id.toString().slice(-6).toUpperCase()} has been cancelled as per your request.`,
+      "order",
+      order._id
+    );
+
+    return res.json({
+      success: true,
+      message: "Order cancelled successfully",
+      order,
+    });
+  } catch (err) {
+    console.error("Cancel Order Error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Error cancelling order",
+    });
+  }
+};
+
 module.exports = {
   createOrder,
   getAllOrders,
@@ -447,4 +507,5 @@ module.exports = {
   getOrder,
   updateOrderStatus,
   updatePaymentStatus,
+  cancelOrderByUser,
 };

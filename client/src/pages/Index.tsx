@@ -14,13 +14,13 @@ const Index = () => {
       <Header />
       {/* Full-width banner section */}
       <BannerSlider />
-      
+
       {/* Rest of the content with pastel purple background */}
       <div className="bg-gradient-to-br from-purple-100/50 via-purple-50/30 to-pink-50/50">
         <CategoryGrid />
-        <ServiceHighlights/>
         <FeaturedProducts />
-        <AboutSection/>
+        <AboutSection />
+        <ServiceHighlights />
         <Footer />
       </div>
     </div>

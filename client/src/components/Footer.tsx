@@ -126,7 +126,8 @@ const Footer: React.FC = () => {
 
   return (
     <footer
-      className="relative pt-24 pb-10 bg-gradient-to-b from-orange-50 via-orange-50/80 to-white overflow-hidden"
+      className="relative pt-24 pb-20 bg-gradient-to-b from-orange-50 via-orange-50/80 to-white overflow-hidden"
+
       style={{ fontFamily: "'Inter', sans-serif" }}
     >
       {/* Decorative Top Wave Divider */}
@@ -145,32 +146,39 @@ const Footer: React.FC = () => {
 
       <div className="container mx-auto px-6 relative z-10">
         <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-12 lg:gap-8 mb-16"
+          className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-8 mb-16"
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.1 }}
         >
 
-          {/* --- Brand Section (4 cols) --- */}
-          <motion.div className="lg:col-span-4 flex flex-col items-start" initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.45 }}>
+          {/* --- Brand Section (full width on mobile, 4 cols on desktop) --- */}
+          <motion.div className="col-span-2 lg:col-span-4 flex flex-col items-start" initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.45 }}>
             <LogoBrand />
             <p className="mt-6 text-orange-900/80 leading-relaxed text-[15px] pr-4">
               Discover the sacred energy of Lord Shiva. We provide authentic, blessed Rudraksha malas, Murtis, and spiritual artifacts to enhance your meditation and bring peace to your home.
             </p>
 
-            <div className="mt-8 flex items-center gap-4">
-              <SocialLink href={instagramProfile} icon={<InstagramIcon />} color="from-pink-500 to-purple-600" label="Instagram" />
-              <SocialLink href="https://www.facebook.com/divinemahadev" icon={<FacebookIcon />} color="from-blue-600 to-blue-700" label="Facebook" />
-              <SocialLink href="https://www.youtube.com/@divinemahadev" icon={<YouTubeIcon />} color="from-red-500 to-red-600" label="YouTube" />
+            <div className="mt-8">
+              <p className="text-xs font-semibold tracking-[0.18em] uppercase text-orange-700/80 mb-3">
+                Follow us on
+              </p>
+              <div className="flex items-center gap-3">
+                <SocialLink href={instagramProfile} icon={<InstagramIcon />} color="from-orange-500 to-amber-600" label="Instagram" />
+                <SocialLink href="https://www.facebook.com/divinemahadev" icon={<FacebookIcon />} color="from-orange-500 to-amber-600" label="Facebook" />
+                <SocialLink href="https://www.youtube.com/@divinemahadev" icon={<YouTubeIcon />} color="from-orange-500 to-amber-600" label="YouTube" />
+              </div>
             </div>
+
           </motion.div>
 
-          {/* --- Quick Links (2 cols) --- */}
-          <motion.div className="lg:col-span-2 lg:pl-4" initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.45, delay: 0.1 }}>
-            <h4 className="text-lg font-serif font-bold text-orange-900 mb-6 flex items-center gap-2">
+          {/* --- Quick Links (1 col on mobile, 2 cols on desktop) --- */}
+          <motion.div className="col-span-1 lg:col-span-2" initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.45, delay: 0.1 }}>
+            <h4 className="text-base md:text-lg font-serif font-bold text-orange-900 mb-4 flex items-center gap-2">
               Links
             </h4>
+
             <ul className="space-y-3">
               {quickLinks.map((link) => (
                 <li key={link.label}>
@@ -180,11 +188,12 @@ const Footer: React.FC = () => {
             </ul>
           </motion.div>
 
-          {/* --- Categories (3 cols) --- */}
-          <motion.div className="lg:col-span-3" initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.45, delay: 0.2 }}>
-            <h4 className="text-lg font-serif font-bold text-orange-900 mb-6 flex items-center gap-2">
-              Sacred Collections
+          {/* --- Categories (1 col on mobile, 3 cols on desktop) --- */}
+          <motion.div className="col-span-1 lg:col-span-3" initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.45, delay: 0.2 }}>
+            <h4 className="text-base md:text-lg font-serif font-bold text-orange-900 mb-4 flex items-center gap-2">
+              Collections
             </h4>
+
             <ul className="space-y-3">
               {loadingCats ? (
                 Array(3).fill(0).map((_, i) => (
@@ -205,8 +214,8 @@ const Footer: React.FC = () => {
             </ul>
           </motion.div>
 
-          {/* --- Contact (3 cols) --- */}
-          <motion.div className="lg:col-span-3" initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.45, delay: 0.3 }}>
+          {/* --- Contact (full width on mobile, 3 cols on desktop) --- */}
+          <motion.div className="col-span-2 lg:col-span-3" initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.45, delay: 0.3 }}>
             <h4 className="text-lg font-serif font-bold text-orange-900 mb-6">
               Divine Support
             </h4>
@@ -260,11 +269,18 @@ const Footer: React.FC = () => {
 
               <div className="flex items-start gap-2 mt-4 text-orange-800/80 text-sm">
                 <MapPin size={16} className="mt-1 flex-shrink-0 text-orange-600" />
-                <span>Ujjain, Mahakal Nagari,<br />Madhya Pradesh, India</span>
+                <span>In front of Mahakal Mandir Shikhar, Mahakal Chouraha, Ujjain<br />Madhya Pradesh, India</span>
               </div>
             </div>
           </motion.div>
         </motion.div>
+
+        {/* Chant Text */}
+        <div className="mt-10 mb-6 flex justify-center opacity-10 select-none pointer-events-none">
+          <span className="text-5xl md:text-6xl font-bold font-serif text-orange-900">
+            ॐ नमः शिवाय
+          </span>
+        </div>
 
         {/* --- Footer Bottom --- */}
         <motion.div
@@ -285,10 +301,6 @@ const Footer: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* Chant Overlay */}
-        <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 opacity-5 select-none pointer-events-none">
-          <span className="text-6xl font-bold font-serif text-orange-900">ॐ नमः शिवाय</span>
-        </div>
       </div>
     </footer>
   );
@@ -302,12 +314,14 @@ const SocialLink = ({ href, icon, color, label }: { href: string; icon: React.Re
     target="_blank"
     rel="noopener noreferrer"
     aria-label={label}
-    className={`w-10 h-10 rounded-full bg-gradient-to-br ${color} flex items-center justify-center text-white shadow-md shadow-orange-900/10 relative overflow-hidden group`}
-    whileHover={{ scale: 1.1, rotate: 5 }}
-    whileTap={{ scale: 0.95 }}
+    className="w-9 h-9 rounded-full bg-white/70 border border-orange-200 text-orange-700 flex items-center justify-center shadow-sm shadow-orange-900/5 relative overflow-hidden group"
+    whileHover={{ scale: 1.05 }}
+    whileTap={{ scale: 0.96 }}
   >
-    <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-    {icon}
+    <div className="absolute inset-0 bg-orange-100/70 opacity-0 group-hover:opacity-100 transition-opacity" />
+    <span className="relative">
+      {icon}
+    </span>
   </motion.a>
 );
 

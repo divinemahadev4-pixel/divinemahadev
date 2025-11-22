@@ -6,8 +6,10 @@ const {
   getUserOrders,
   getOrder,
   updateOrderStatus,
-  updatePaymentStatus
+  updatePaymentStatus,
+  cancelOrderByUser,
 } = require('../controllers/orderController');
+
 const userMiddleware = require('../middleware/userMiddleware');
 const adminMiddleware = require('../middleware/adminMiddleware');
 
@@ -15,6 +17,7 @@ const adminMiddleware = require('../middleware/adminMiddleware');
 orderRouter.post('/create', userMiddleware, createOrder);
 orderRouter.get('/user', userMiddleware, getUserOrders);
 orderRouter.get('/:id', userMiddleware, getOrder);
+orderRouter.patch('/:id/cancel', userMiddleware, cancelOrderByUser);
 
 // Admin routes
 orderRouter.get('/admin/all', adminMiddleware, getAllOrders);

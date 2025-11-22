@@ -19,7 +19,7 @@ const createReview = async(req ,res)=>{
 const getReviews = async (req,res) =>{
 try{
     const {product_id} = req.params;
-    const reviews = await review.find({product_id:product_id});
+    const reviews = await Review.find({ product_id });
     res.status(200).json({
         message:"here's your all data",
         data:reviews

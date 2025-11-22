@@ -746,7 +746,7 @@ function OrderActions({ orderId, onClose }: { orderId: string; onClose: () => vo
       const headers = adminToken ? { Authorization: `Bearer ${adminToken}` } : {};
 
       const res = await axios.patch(
-        `${API_URL}/orders/admin/status/${orderId}`,
+        `${API_URL}/orders/admin/${orderId}/status`,
         { status },
         { headers }
       );

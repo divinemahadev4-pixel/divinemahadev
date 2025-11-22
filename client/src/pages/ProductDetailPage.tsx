@@ -17,10 +17,15 @@ import {
   Crown,
   Sun,
   CreditCard,
+  Truck,
+  Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
 import { useCart } from "@/components/CartContext";
 import { useWishlist } from "@/components/WishlistContext";
 import { useAuth } from "@/components/AuthContext";
@@ -57,9 +62,20 @@ interface Review {
   createdAt?: string;
 }
 
+interface ShippingAddress {
+  fullName: string;
+  address: string;
+  city: string;
+  state: string;
+  pinCode: string;
+  phone: string;
+}
+
 const ProductDetailPage: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
   const navigate = useNavigate();
+
+  const { user } = useAuth();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
@@ -69,25 +85,19 @@ const ProductDetailPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState("description");
   const [showImageModal, setShowImageModal] = useState(false);
   const [buying, setBuying] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [shippingAddress, setShippingAddress] = useState<ShippingAddress>({
+    fullName: user?.firstName || "",
+    address: "",
+    city: "",
+    state: "",
+    pinCode: "",
+    phone: "",
+  });
 
   // Reviews state
   const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState<boolean>(false);
-
-  // Add review form state
-  const { user } = useAuth();
-  const [nameInput, setNameInput] = useState<string>(user?.firstName || "");
-  const [reviewText, setReviewText] = useState<string>("");
-  const [ratingInput, setRatingInput] = useState<number>(5);
-  const [submittingReview, setSubmittingReview] = useState<boolean>(false);
-
-  const { addToCart } = useCart();
-  const { toggleWishlist, isInWishlist } = useWishlist();
-
-  // Phone verification and payment processing hooks
-  const phoneVerification = usePhoneVerification();
-  const { checkoutLoading, processPayment } = usePaymentProcessing();
-  const [directBuyProduct, setDirectBuyProduct] = useState<Product | null>(null);
 
   // Calculate average rating from reviews
   const calculateAverageRating = (reviews: Review[]): number => {
@@ -104,7 +114,7 @@ const ProductDetailPage: React.FC = () => {
   const calculateRatingDistribution = (reviews: Review[]) => {
     const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
 
-    reviews.forEach(review => {
+    reviews.forEach((review) => {
       if (review.rating >= 1 && review.rating <= 5) {
         distribution[review.rating as keyof typeof distribution]++;
       }
@@ -114,15 +124,45 @@ const ProductDetailPage: React.FC = () => {
   };
 
   // Get current product rating (from reviews or fallback to product rating)
-  const currentProductRating = reviews.length > 0
-    ? calculateAverageRating(reviews)
-    : (product?.Product_rating || 0);
+  const currentProductRating =
+    reviews.length > 0 ? calculateAverageRating(reviews) : product?.Product_rating || 0;
 
   // Get rating distribution
   const ratingDistribution = calculateRatingDistribution(reviews);
 
+  // Add review form state
+  const [nameInput, setNameInput] = useState<string>(user?.firstName || "");
+  const [reviewText, setReviewText] = useState<string>("");
+  const [ratingInput, setRatingInput] = useState<number>(5);
+  const [submittingReview, setSubmittingReview] = useState<boolean>(false);
+
+  const { addToCart } = useCart();
+  const { toggleWishlist, isInWishlist } = useWishlist();
+
+  // Phone verification and payment processing hooks
+  const phoneVerification = usePhoneVerification();
+  const { checkoutLoading, processPayment } = usePaymentProcessing();
+  const [directBuyProduct, setDirectBuyProduct] = useState<Product | null>(null);
+
   useEffect(() => {
     if (user && user.firstName) setNameInput(user.firstName);
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    try {
+      const key = `shipping_address_${user._id}`;
+      const stored = localStorage.getItem(key);
+      if (stored) {
+        const parsed = JSON.parse(stored) as Partial<ShippingAddress>;
+        setShippingAddress((prev) => ({
+          ...prev,
+          ...parsed,
+        }));
+      }
+    } catch (e) {
+      console.error("Failed to load saved shipping address", e);
+    }
   }, [user]);
 
   // fetch product
@@ -190,10 +230,14 @@ const ProductDetailPage: React.FC = () => {
 
   // Handle phone verification for direct buy
   useEffect(() => {
-    if (phoneVerification.phoneVerified && directBuyProduct) {
-      handleDirectBuyPayment(directBuyProduct);
+    if (phoneVerification.phoneVerified) {
+      setShippingAddress((prev) => ({
+        ...prev,
+        phone: phoneVerification.phoneNumber,
+      }));
+      setIsCheckingOut(true);
     }
-  }, [phoneVerification.phoneVerified, directBuyProduct]);
+  }, [phoneVerification.phoneVerified, phoneVerification.phoneNumber]);
 
   // Utilities (wishlist/cart transforms)
   const transformProductForWishlist = (prod: Product) => ({
@@ -261,6 +305,17 @@ const ProductDetailPage: React.FC = () => {
     });
   };
 
+  const handleShippingInputChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const { name, value } = e.target;
+    const fieldName = name as keyof ShippingAddress;
+    setShippingAddress((prev) => ({
+      ...prev,
+      [fieldName]: value,
+    }));
+  };
+
   const handleDirectBuy = () => {
     if (!product) return;
 
@@ -280,7 +335,10 @@ const ProductDetailPage: React.FC = () => {
     setTimeout(() => setBuying(false), 700);
   };
 
-  const handleDirectBuyPayment = async (product: Product) => {
+  const handleDirectBuyPayment = async (
+    product: Product,
+    paymentMethod: "cod" | "online"
+  ) => {
     if (!phoneVerification.phoneVerified) {
       toast({
         title: "Phone Not Verified",
@@ -290,46 +348,130 @@ const ProductDetailPage: React.FC = () => {
       return;
     }
 
+    const requiredFields: (keyof ShippingAddress)[] = [
+      "fullName",
+      "address",
+      "city",
+      "state",
+      "pinCode",
+      "phone",
+    ];
+
+    const missingFields = requiredFields.filter(
+      (field) => !shippingAddress[field].trim()
+    );
+
+    if (missingFields.length > 0) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all shipping address fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (user?._id) {
+      try {
+        const key = `shipping_address_${user._id}`;
+        localStorage.setItem(key, JSON.stringify(shippingAddress));
+      } catch (e) {
+        console.error("Failed to save shipping address", e);
+      }
+    }
+
     // FIXED: Use Product_price as selling price for payment
     const sellingPriceForPayment = product.Product_price;
 
-    const orderItems = [{
-      productId: product._id,
-      quantity: quantity,
-      price: sellingPriceForPayment, // Selling price
-      name: product.Product_name,
-      image: product.Product_image[0] || ""
-    }];
+    const orderItems = [
+      {
+        productId: product._id,
+        quantity: quantity,
+        price: sellingPriceForPayment, // Selling price
+        name: product.Product_name,
+        image: product.Product_image[0] || "",
+      },
+    ];
 
-    const shippingAddress = {
-      fullName: user?.firstName || "Customer",
-      address: "To be provided",
-      city: "To be provided",
-      state: "To be provided",
-      pinCode: "000000",
-      phone: phoneVerification.phoneNumber
-    };
+    // Dedicated COD flow: create order and navigate explicitly
+    if (paymentMethod === "cod") {
+      try {
+        const orderData = {
+          userId: user?._id,
+          items: orderItems,
+          shippingAddress: {
+            street: shippingAddress.address,
+            city: shippingAddress.city,
+            state: shippingAddress.state,
+            pincode: shippingAddress.pinCode,
+            country: "India",
+          },
+          itemsTotal: sellingPriceForPayment * quantity,
+          deliveryCharge: 0,
+          totalAmount: sellingPriceForPayment * quantity,
+          paymentMethod: "cod",
+          Contact_number: shippingAddress.phone,
+          user_email: user?.email,
+          isCustomHamper: false,
+        };
 
+        const res = await axiosInstance.post("/razorpay/create-order", orderData);
+
+        if (!res.data?.success) {
+          throw new Error(res.data?.message || "Failed to place COD order");
+        }
+
+        const orderId = res.data.orderId || res.data.order?._id;
+
+        toast({
+          title: "Order Placed Successfully!",
+          description: "Your order has been placed. You will be redirected shortly.",
+        });
+
+        setDirectBuyProduct(null);
+        setIsCheckingOut(false);
+        phoneVerification.resetPhoneVerification();
+
+        if (orderId) {
+          navigate(`/order-confirmation/${orderId}`, {
+            state: {
+              orderId,
+              paymentMethod: "cod",
+              totalAmount: sellingPriceForPayment * quantity,
+              cartType: "cart",
+            },
+          });
+        } else {
+          navigate("/orders");
+        }
+      } catch (err: any) {
+        console.error("Direct COD error:", err);
+        toast({
+          title: "Unable to place order",
+          description:
+            err?.response?.data?.message || err.message || "Something went wrong",
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+
+    // Online payment still uses shared Razorpay-based hook
     const success = await processPayment(
       orderItems,
       shippingAddress,
-      "online",
+      paymentMethod,
       {
         itemsTotal: sellingPriceForPayment * quantity,
         deliveryCharge: 0,
-        totalAmount: sellingPriceForPayment * quantity
+        totalAmount: sellingPriceForPayment * quantity,
       },
       "cart"
     );
 
     if (success) {
       setDirectBuyProduct(null);
+      setIsCheckingOut(false);
       phoneVerification.resetPhoneVerification();
-      toast({
-        title: "Order Placed Successfully!",
-        description: `${product.Product_name} - Your divine item is on its way`,
-        duration: 2000,
-      });
     }
   };
 
@@ -516,7 +658,7 @@ const ProductDetailPage: React.FC = () => {
                 <div className="relative group aspect-square bg-gradient-to-br from-white via-amber-50 to-amber-100">
                   <motion.img src={selectedImage!} alt={product.Product_name} className="w-full h-full object-cover cursor-zoom-in" onError={(e) => (e.currentTarget.src = "/fallback.jpg")} onClick={() => setShowImageModal(true)} whileHover={{ scale: 1.02 }} transition={{ duration: 0.3 }} />
                   <div className="absolute top-3 left-3 flex flex-col gap-2">
-                    {hasDiscount && <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold px-2 py-1 text-xs shadow-lg border-0">{discountPercentage}% OFF</Badge>}
+                    {hasDiscount && <Badge className="mb-3 bg-amber-100 text-amber-800 border-0 font-semibold">{discountPercentage}% OFF</Badge>}
                     {product.isNew && <Badge className="bg-gradient-to-r from-emerald-500 to-green-500 text-white font-semibold px-2 py-1 text-xs shadow-lg border-0"><Sparkles size={10} className="mr-1" />NEW</Badge>}
                     <Badge className={`font-semibold px-2 py-1 text-xs shadow-lg border-0 ${product.Product_available ? "bg-gradient-to-r from-emerald-500 to-green-500 text-white" : "bg-gradient-to-r from-amber-500 to-orange-500 text-white"}`}><Check size={10} className="mr-1" />{product.Product_available ? "In Stock" : "Out of Stock"}</Badge>
                   </div>
@@ -869,6 +1011,77 @@ const ProductDetailPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Checkout Modal */}
+      {isCheckingOut && (
+        <AnimatePresence>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative w-full max-w-md max-h-full bg-white rounded-2xl overflow-hidden shadow-2xl p-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Shipping Address</h2>
+              <form className="space-y-4">
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">Full Name</Label>
+                  <Input
+                    type="text"
+                    name="fullName"
+                    value={shippingAddress.fullName}
+                    onChange={handleShippingInputChange}
+                    className="mt-2 w-full border border-amber-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">Address</Label>
+                  <Input
+                    type="text"
+                    name="address"
+                    value={shippingAddress.address}
+                    onChange={handleShippingInputChange}
+                    className="mt-2 w-full border border-amber-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">City</Label>
+                  <Input
+                    type="text"
+                    name="city"
+                    value={shippingAddress.city}
+                    onChange={handleShippingInputChange}
+                    className="mt-2 w-full border border-amber-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">State</Label>
+                  <Input
+                    type="text"
+                    name="state"
+                    value={shippingAddress.state}
+                    onChange={handleShippingInputChange}
+                    className="mt-2 w-full border border-amber-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-700">Pin Code</Label>
+                  <Input
+                    type="text"
+                    name="pinCode"
+                    value={shippingAddress.pinCode}
+                    onChange={handleShippingInputChange}
+                    className="mt-2 w-full border border-amber-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                  />
+                </div>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button onClick={() => handleDirectBuyPayment(directBuyProduct!, "cod")} className="flex-1 h-12 text-sm font-semibold bg-gradient-to-r from-amber-500 to-orange-500 text-white">
+                    <Truck size={16} className="mr-2" /> Cash on Delivery
+                  </Button>
+                  <Button onClick={() => handleDirectBuyPayment(directBuyProduct!, "online")} className="flex-1 h-12 text-sm font-semibold bg-gradient-to-r from-amber-600 to-orange-600 text-white">
+                    <Lock size={16} className="mr-2" /> Online Payment
+                  </Button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        </AnimatePresence>
+      )}
 
       {/* Phone Verification Modal */}
       <PhoneVerificationModal

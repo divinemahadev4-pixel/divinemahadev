@@ -138,14 +138,14 @@ const ProductCard: React.FC<{
       <motion.div
         tabIndex={0}
         onClick={() => onClick(product._id)}
-        className="group bg-white rounded-xl border border-orange-100/50 shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer flex flex-col focus:outline-none focus:ring-1 focus:ring-orange-200 overflow-hidden"
+        className="group bg-white border border-orange-100/50 shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer flex flex-col focus:outline-none focus:ring-1 focus:ring-orange-200 overflow-hidden"
         aria-label={product.Product_name}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         whileHover={{ y: -4, scale: 1.01 }}
         transition={{ duration: 0.4 }}
       >
-        <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl bg-white">
+        <div className="relative aspect-[4/3] overflow-hidden bg-white">
           {product.Product_image?.[0] ? (
             <>
               {!imageLoaded && (

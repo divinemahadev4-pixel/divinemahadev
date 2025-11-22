@@ -60,7 +60,7 @@ export const usePaymentProcessing = () => {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   // **NOTE:** Razorpay Key ID ko environment variable se fetch karna best practice hai
-  const RAZORPAY_KEY_ID = "YOUR_RAZORPAY_KEY_ID"; // 🚨 Apni actual key se replace karein
+  const RAZORPAY_KEY_ID = "YOUR_RAZORPAY_KEY_ID"; // Apni actual key se replace karein
 
   const processPayment = async (
     items: any[],
@@ -91,28 +91,48 @@ export const usePaymentProcessing = () => {
         isCustomHamper: cartType === "hamper",
       };
 
-      console.log("📤 Sending order data:", orderData);
-      // ✅ Endpoint update kiya: /cashfree/create se /razorpay/create-order
+      console.log(" Sending order data:", orderData);
+      // Endpoint update kiya: /cashfree/create se /razorpay/create-order
       const response = await axiosInstance.post("/razorpay/create-order", orderData); 
+
+      const navigateToConfirmation = (
+        orderId: string | undefined,
+        method: "cod" | "online"
+      ) => {
+        if (!orderId) {
+          navigate("/orders");
+          return;
+        }
+        navigate(`/order-confirmation/${orderId}`, {
+          state: {
+            orderId,
+            paymentMethod: method,
+            totalAmount: totals.totalAmount,
+            cartType,
+          },
+        });
+      };
 
       if (response.data.success) {
         if (paymentMethod === "cod") {
-          // COD flow same rahega
           if (cartType === "cart") {
             await axiosInstance.delete("/cart/clear");
           } else if (cartType === "hamper") {
             await axiosInstance.delete("/hamper/clear");
           }
 
+          const orderId = response.data.orderId || response.data.order?._id;
+
           toast({
-            title: "Order Placed Successfully! 🎉",
+            title: "Order Placed Successfully! ",
             description:
-              "Your order has been placed. Check 'My Orders' to track it.",
+              "Your order has been placed. You will be redirected shortly.",
           });
-          navigate("/orders");
+
+          navigateToConfirmation(orderId, "cod");
           return true;
         } else {
-          // ✅ Razorpay online payment handling
+          // Razorpay online payment handling
           const { razorpayOrderId, internalOrderId, amount, razorpayKeyId } = response.data; // Server se Razorpay data expect kiya
 
           // Step 1: Razorpay Script Load karna
@@ -138,7 +158,7 @@ export const usePaymentProcessing = () => {
             try {
               // Payment success hone par server par verification call karna
               const verifyRes = await axiosInstance.post(
-                "/razorpay/verify-payment", // ✅ Verification endpoint update kiya
+                "/razorpay/verify-payment", // Verification endpoint update kiya
                 {
                   ...razorpayResponse,
                   internalOrderId, // Hamara DB order ID
@@ -153,11 +173,15 @@ export const usePaymentProcessing = () => {
                   await axiosInstance.delete("/hamper/clear");
                 }
 
+                const verifiedOrderId =
+                  verifyRes.data.orderId || internalOrderId;
+
                 toast({
-                  title: "Payment Successful! 🥳",
+                  title: "Payment Successful! ",
                   description: "Aapka payment ho gaya aur order place ho chuka hai.",
                 });
-                navigate("/orders");
+
+                navigateToConfirmation(verifiedOrderId, "online");
                 return true;
               } else {
                 // Verification failed 
