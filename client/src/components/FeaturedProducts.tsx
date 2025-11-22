@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Heart,
+  Star,
   ShoppingCart,
   Eye,
   Sparkles,
@@ -144,7 +145,7 @@ const ProductCard: React.FC<{
         whileHover={{ y: -4, scale: 1.01 }}
         transition={{ duration: 0.4 }}
       >
-        <div className="relative aspect-square overflow-hidden rounded-t-xl bg-white">
+        <div className="relative aspect-[4/3] overflow-hidden rounded-t-xl bg-white">
           {product.Product_image?.[0] ? (
             <>
               {!imageLoaded && (
@@ -156,10 +157,10 @@ const ProductCard: React.FC<{
                 src={product.Product_image[0]}
                 alt={product.Product_name}
                 loading="lazy"
-                className={`object-cover w-full h-full transition-all duration-500 group-hover:scale-105 ${imageLoaded ? "opacity-100" : "opacity-0"
-                  }`}
+                className={`block w-full h-full object-cover object-center transition-all duration-500 group-hover:scale-105 ${
+                  imageLoaded ? "opacity-100" : "opacity-0"
+                }`}
                 onLoad={() => setImageLoaded(true)}
-                style={{ maxHeight: 230 }}
               />
             </>
           ) : (
@@ -173,20 +174,6 @@ const ProductCard: React.FC<{
 
           {/* Product Status Badges */}
           <div className="absolute top-3 right-3 flex flex-col gap-2">
-            {/* Discount Badge */}
-            {discountPercentage > 0 && (
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ type: "spring", stiffness: 200, delay: 0.1 }}
-              >
-                <Badge className="bg-gradient-to-r from-red-500 to-pink-600 text-white font-semibold text-xs px-2 py-1 border-0 shadow-sm">
-                  {discountPercentage}% OFF
-                </Badge>
-              </motion.div>
-            )}
-
-            {/* NEW Badge */}
             {product.isNew && (
               <motion.div
                 initial={{ scale: 0 }}
@@ -234,115 +221,59 @@ const ProductCard: React.FC<{
         </div>
 
         {/* Product Info - Clean white design - Mobile Optimized */}
-        <div className="flex flex-col flex-1 p-3 md:p-4 bg-white">
+        <div className="flex flex-col flex-1 p-2.5 sm:p-3 md:p-4 bg-white">
           <h3
-            className="text-xs md:text-sm font-semibold text-gray-900 line-clamp-2 mb-1 leading-tight"
+            className="text-[11px] sm:text-xs md:text-sm font-semibold text-gray-900 line-clamp-2 mb-1 leading-tight"
             style={{ fontFamily: "'Playfair Display', serif" }}
           >
             {product.Product_name}
           </h3>
           <p
-            className="text-[10px] md:text-xs text-gray-600 line-clamp-2 mb-2 md:mb-3 leading-relaxed hidden md:block"
+            className="text-[10px] sm:text-[11px] md:text-xs text-gray-600 line-clamp-2 mb-2 md:mb-3 leading-relaxed hidden md:block"
             title={description}
           >
             {description}
           </p>
 
-          <div className="mt-auto space-y-2 md:space-y-3">
+          {typeof product.Product_rating === "number" && product.Product_rating > 0 && (
+            <div className="flex items-center gap-1 mb-1.5 md:mb-2">
+              <div className="flex items-center bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded">
+                <Star className="w-3 h-3 fill-amber-400 stroke-none" />
+                <span className="text-[11px] font-semibold ml-0.5">
+                  {product.Product_rating.toFixed(1)}
+                </span>
+              </div>
+              <span className="text-[10px] text-gray-500">
+                Top rated item
+              </span>
+            </div>
+          )}
+
+          <div className="mt-auto space-y-1.5 md:space-y-2.5">
             {/* Price Section with Discount - Mobile Optimized */}
             <div className="space-y-1">
               {/* Selling Price (Main Price) */}
               <div className="flex items-baseline gap-1.5 flex-wrap">
-                <span className="text-base md:text-lg font-bold text-gray-900">
+                <span className="text-[11px] md:text-xs text-gray-600 font-medium">
+                  From
+                </span>
+                <span className="text-sm sm:text-base md:text-lg font-bold text-gray-900">
                   {currency(sellingPrice)}
                 </span>
 
                 {/* MRP with strikethrough - Show if discounted_price exists and is different */}
                 {product.discounted_price && product.discounted_price !== sellingPrice && (
-                  <span className="text-xs md:text-sm text-gray-400 line-through">
+                  <span className="text-[11px] sm:text-xs md:text-sm text-gray-400 line-through">
                     {currency(product.discounted_price)}
                   </span>
                 )}
-              </div>
 
-              {/* Discount Badge - Only show if there's actual discount */}
-              {hasDiscount && discountPercentage > 0 && (
-                <div className="flex items-center">
-                  <span className="text-[10px] md:text-xs font-semibold text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-200">
+                {hasDiscount && discountPercentage > 0 && (
+                  <span className="ml-auto text-[10px] md:text-xs font-semibold text-white bg-gray-900 px-2 py-0.5 rounded-sm">
                     {discountPercentage}% OFF
                   </span>
-                </div>
-              )}
-            </div>
-
-            {/* Action Buttons - Mobile Optimized */}
-            <div className="space-y-1.5 md:space-y-2">
-              {/* Add to Cart Button */}
-              <motion.div
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
-              >
-                <Button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleAdd();
-                  }}
-                  disabled={adding}
-                  className="w-full font-semibold rounded-lg bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white transition-all duration-200 shadow-sm hover:shadow border-0 text-[11px] md:text-xs py-2 md:py-2.5 h-auto"
-                >
-                  {adding ? (
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{
-                        duration: 1,
-                        repeat: Infinity,
-                        ease: "linear",
-                      }}
-                    >
-                      <Sparkles className="w-3 h-3" />
-                    </motion.div>
-                  ) : (
-                    <>
-                      <ShoppingCart size={13} className="mr-1.5" />
-                      Add to Cart
-                    </>
-                  )}
-                </Button>
-              </motion.div>
-
-              {/* Direct Buy Button */}
-              <motion.div
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
-              >
-                <Button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDirectBuy();
-                  }}
-                  disabled={buying}
-                  className="w-full font-semibold rounded-lg bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white transition-all duration-200 shadow-sm hover:shadow border-0 text-[11px] md:text-xs py-2 md:py-2.5 h-auto"
-                  variant="default"
-                >
-                  {buying ? (
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{
-                        duration: 1,
-                        repeat: Infinity,
-                        ease: "linear",
-                      }}
-                    >
-                      <Sparkles className="w-3 h-3" />
-                    </motion.div>
-                  ) : (
-                    <>
-                      <CreditCard size={13} className="mr-1.5" />
-                      Buy Now
-                    </>
-                  )}
-                </Button>
-              </motion.div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -570,8 +501,8 @@ const FeaturedProducts: React.FC = () => {
 
   return (
     <>
-      <section className="relative pt-20 pb-12 bg-white">
-        <div className="relative max-w-7xl mx-auto px-4">
+      <section className="relative pt-12 pb-8 md:pt-20 md:pb-12 bg-white">
+        <div className="relative max-w-7xl mx-auto px-2 sm:px-4">
           {/* Header Section */}
           <motion.header
             className="mb-10 text-center max-w-4xl mx-auto"
@@ -632,8 +563,8 @@ const FeaturedProducts: React.FC = () => {
             ))}
           </div>
 
-          {/* Products Grid - 2 columns on mobile */}
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4 mb-10">
+          {/* Products Grid - Responsive columns */}
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-3 md:gap-4 mb-8 md:mb-10">
             {products.map((product) => (
               <ProductCard
                 key={product._id}

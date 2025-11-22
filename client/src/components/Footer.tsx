@@ -211,6 +211,21 @@ const Footer: React.FC = () => {
               Divine Support
             </h4>
             <div className="space-y-4">
+              {/* Phone Card */}
+              <motion.a
+                href={`tel:${phone.replace(/\s+/g, "")}`}
+                className="flex items-center gap-4 p-3 rounded-xl bg-white/40 backdrop-blur-sm border border-orange-200 hover:border-orange-400 hover:bg-white/60 transition-all duration-300 group shadow-sm"
+                whileHover={{ y: -2 }}
+              >
+                <div className="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center group-hover:bg-orange-500 group-hover:text-white transition-colors">
+                  <Phone size={18} />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-orange-900/60 uppercase tracking-wider">Phone Support</p>
+                  <p className="text-orange-900 font-medium">{phone}</p>
+                </div>
+              </motion.a>
+
               {/* WhatsApp Card */}
               <motion.a
                 href={`https://wa.me/${whatsappNumber}?text=Hari%20Om!%20I%20need%20assistance.`}

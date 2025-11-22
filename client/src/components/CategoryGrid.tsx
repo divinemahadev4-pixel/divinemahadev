@@ -109,11 +109,11 @@ const CategoryGridModern: React.FC = () => {
   }
 
   return (
-    <section className="relative pt-16 pb-12 bg-gradient-to-br from-white via-orange-50 to-amber-50/30">
+    <section className="relative pt-16 pb-8  bg-gradient-to-br from-white via-orange-50 to-amber-50/30">
       <div className="relative max-w-7xl mx-auto px-4">
         {/* Header - Right Aligned and Smaller */}
         <motion.header
-          className="mb-8 text-left max-w-2xl "
+          className="mb-6 text-left max-w-2xl "
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6 }}
@@ -123,10 +123,10 @@ const CategoryGridModern: React.FC = () => {
           </h2>
         </motion.header>
 
-        {/* Horizontal scroll drag container - Smaller spacing */}
+        {/* Horizontal scroll drag container - Very tight spacing */}
         <div
           ref={scrollRef}
-          className="flex space-x-6 overflow-x-auto overflow-y-hidden snap-x snap-mandatory scroll-pl-4 pb-6 cursor-grab"
+          className="flex space-x-1 md:space-x-2 overflow-x-auto overflow-y-hidden snap-x snap-mandatory scroll-pl-4 pb-4 cursor-grab"
           onMouseDown={onMouseDown}
           onMouseLeave={onMouseLeave}
           onMouseUp={onMouseUp}
@@ -140,11 +140,11 @@ const CategoryGridModern: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               whileHover={{ y: -4, scale: 1.02 }}
               transition={{ duration: 0.4 }}
-              className="flex flex-col items-center cursor-pointer flex-shrink-0 w-40 snap-center group"
+              className="flex flex-col items-center cursor-pointer flex-shrink-0 w-44 md:w-48 snap-center group"
               onClick={() => navigate(`/category/${category.slug}`)}
             >
               {/* Square Card Container - Changed from rounded-full to rounded-xl */}
-              <div className="relative rounded-xl overflow-hidden bg-gradient-to-br from-white to-orange-50/70 shadow-md border-2 border-orange-200/50 group-hover:border-orange-300 transition-all duration-400 w-32 h-32 mb-3">
+              <div className="relative rounded-xl overflow-hidden bg-gradient-to-br from-white to-orange-50/70 shadow-md border-2 border-orange-200/50 group-hover:border-orange-300 transition-all duration-400 w-36 h-36 md:w-40 md:h-40 mb-3.5">
                 <div className="absolute inset-0 rounded-xl overflow-hidden">
                   <img
                     src={category.image || "/fallback.jpg"}
@@ -171,13 +171,13 @@ const CategoryGridModern: React.FC = () => {
                 )}
               </div>
 
-              {/* Category Name Below Card - Smaller */}
+              {/* Category Name Below Card - Slightly larger */}
               <div className="text-center space-y-1.5">
-                <h3 className="text-sm font-semibold text-orange-900 group-hover:text-orange-700 transition-colors duration-300 leading-tight">
+                <h3 className="text-[0.9rem] md:text-base font-semibold text-orange-900 group-hover:text-orange-700 transition-colors duration-300 leading-tight">
                   {category.name}
                 </h3>
                 <Button 
-                  className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white px-4 py-1.5 rounded-lg text-xs font-medium shadow-sm hover:shadow transition-all duration-300"
+                  className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white px-5 py-1.5 rounded-lg text-xs md:text-sm font-medium shadow-sm hover:shadow transition-all duration-300"
                   size="sm"
                 >
                   Explore
@@ -187,8 +187,8 @@ const CategoryGridModern: React.FC = () => {
           ))}
         </div>
 
-        {/* Scroll Indicator - Smaller */}
-        <div className="flex justify-center mt-6">
+        {/* Scroll Indicator - Slightly closer */}
+        <div className="flex justify-center mt-4">
           <div className="flex space-x-1.5">
             {categories.slice(0, 4).map((_, index) => (
               <div
