@@ -79,32 +79,40 @@ const ProductCard: React.FC<{
     const [buying, setBuying] = useState(false);
     const [imageLoaded, setImageLoaded] = useState(false);
 
-    // Determine if there's a valid numeric discounted price (handle 0 and string cases)
+    // FIXED: Product_price is selling price, discounted_price is MRP (original/higher price)
     const hasDiscount = useMemo(() => {
-      const dp = product.discounted_price as any;
+      const mrp = product.discounted_price as any;
+      const sellingPrice = product.Product_price;
+      
+      // Debug log for first few products
+      if (product.Product_name.includes("Test")) {
+        console.log(`🔍 Product: ${product.Product_name}`);
+        console.log(`   Selling Price: ${sellingPrice}`);
+        console.log(`   MRP (discounted_price): ${mrp}`);
+        console.log(`   Has Discount: ${typeof mrp === "number" && !isNaN(mrp) && mrp > 0 && mrp > sellingPrice}`);
+      }
+      
       return (
-        typeof dp === "number" &&
-        !isNaN(dp) &&
-        dp > 0 &&
-        dp < product.Product_price
+        typeof mrp === "number" &&
+        !isNaN(mrp) &&
+        mrp > 0 &&
+        mrp > sellingPrice // MRP should be higher than selling price
       );
-    }, [product.Product_price, product.discounted_price]);
+    }, [product.Product_price, product.discounted_price, product.Product_name]);
 
-    // Calculate discount percentage
+    // Calculate discount percentage: (MRP - Selling Price) / MRP * 100
     const discountPercentage = useMemo(() => {
       if (!hasDiscount) return 0;
-      return Math.round(
-        ((product.Product_price - (product.discounted_price as number)) /
-          product.Product_price) *
-        100
-      );
+      const mrp = product.discounted_price as number;
+      const sellingPrice = product.Product_price;
+      return Math.round(((mrp - sellingPrice) / mrp) * 100);
     }, [hasDiscount, product.Product_price, product.discounted_price]);
 
-    // Get prices - Product_price is original price, discounted_price is current price if valid
-    const originalPrice = product.Product_price; // Original/higher price
-    const currentPrice = hasDiscount
+    // Get prices - Product_price is selling price, discounted_price is MRP
+    const sellingPrice = product.Product_price; // Current selling price (lower)
+    const mrpPrice = hasDiscount
       ? (product.discounted_price as number)
-      : product.Product_price; // Current selling price
+      : product.Product_price; // MRP/Original price (higher)
 
     const handleAdd = () => {
       if (adding) return;
@@ -243,22 +251,22 @@ const ProductCard: React.FC<{
           <div className="mt-auto space-y-2 md:space-y-3">
             {/* Price Section with Discount - Mobile Optimized */}
             <div className="space-y-1">
-              {/* Current Price */}
+              {/* Selling Price (Main Price) */}
               <div className="flex items-baseline gap-1.5 flex-wrap">
-                <span className="text-base md:text-lg font-bold text-orange-600">
-                  {currency(currentPrice)}
+                <span className="text-base md:text-lg font-bold text-gray-900">
+                  {currency(sellingPrice)}
                 </span>
 
-                {/* Original Price with strikethrough if discount exists */}
-                {discountPercentage > 0 && (
+                {/* MRP with strikethrough - Show if discounted_price exists and is different */}
+                {product.discounted_price && product.discounted_price !== sellingPrice && (
                   <span className="text-xs md:text-sm text-gray-400 line-through">
-                    {currency(originalPrice)}
+                    {currency(product.discounted_price)}
                   </span>
                 )}
               </div>
 
-              {/* Discount Badge */}
-              {discountPercentage > 0 && (
+              {/* Discount Badge - Only show if there's actual discount */}
+              {hasDiscount && discountPercentage > 0 && (
                 <div className="flex items-center">
                   <span className="text-[10px] md:text-xs font-semibold text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-200">
                     {discountPercentage}% OFF
@@ -369,19 +377,9 @@ const FeaturedProducts: React.FC = () => {
   const initialLimit = 10;
   const loadMoreCount = 10;
 
-  // Helper to safely determine current price (handles numeric/string/0 cases)
+  // Helper to get selling price (Product_price is always the selling price)
   const getCurrentPrice = (p: ApiProduct) => {
-    const dp = p.discounted_price as any;
-    // Valid numeric discounted price must be > 0 and less than the regular price
-    if (typeof dp === "number" && !isNaN(dp) && dp > 0 && dp < p.Product_price)
-      return dp;
-    // Try to coerce string numbers (defensive)
-    if (typeof dp === "string") {
-      const parsed = parseFloat(dp);
-      if (!isNaN(parsed) && parsed > 0 && parsed < p.Product_price)
-        return parsed;
-    }
-    return p.Product_price;
+    return p.Product_price; // Product_price is the selling price
   };
 
   const fetchCategories = useCallback(async () => {

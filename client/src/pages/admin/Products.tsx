@@ -194,6 +194,7 @@ export default function Products() {
             name: data.name,
             description: data.description,
             price: Number(data.price),
+            discounted_price: data.discounted_price ? Number(data.discounted_price) : null, // ⭐ ADD THIS
             hamperPrice: data.hamperPrice ? Number(data.hamperPrice) : null,
           },
           { withCredentials: true, headers: adminToken ? { Authorization: `Bearer ${adminToken}` } : {} }
@@ -220,6 +221,7 @@ export default function Products() {
             Product_name: data.name,
             Product_discription: data.description,
             Product_price: Number(data.price),
+            discounted_price: data.discounted_price ? Number(data.discounted_price) : null, // ⭐ ADD THIS
             Hamper_price: data.hamperPrice ? Number(data.hamperPrice) : null,
             Product_image: data.images || [],
             Product_category: data.category || "",

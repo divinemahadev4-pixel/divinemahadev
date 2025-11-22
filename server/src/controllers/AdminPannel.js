@@ -129,6 +129,25 @@ const SaveProduct = async (req, res) => {
     }
 
     // ✅ FIXED: Include hamper fields in the new product
+    // Parse discounted_price properly - only use Product_price as fallback if discounted_price is truly not provided
+    let finalDiscountedPrice = Number(req.body.Product_price);
+
+    if (req.body.discounted_price !== undefined &&
+      req.body.discounted_price !== null &&
+      req.body.discounted_price !== '' &&
+      req.body.discounted_price !== 0) {
+      finalDiscountedPrice = Number(req.body.discounted_price);
+    }
+
+    console.log('🔍 FULL REQUEST BODY:', JSON.stringify(req.body, null, 2));
+    console.log('🔍 Product Creation - Prices:', {
+      Product_price: req.body.Product_price,
+      Product_price_type: typeof req.body.Product_price,
+      discounted_price_received: req.body.discounted_price,
+      discounted_price_type: typeof req.body.discounted_price,
+      finalDiscountedPrice: finalDiscountedPrice
+    });
+
     const newProduct = new Product({
       Product_name: req.body.Product_name,
       Product_discription: req.body.Product_discription,
@@ -138,18 +157,17 @@ const SaveProduct = async (req, res) => {
       Product_available: req.body.Product_available !== false,
       Product_public_id: req.body.Product_public_id || "undcnwe ic jwdn cjw ncjkw cjw",
       Product_slug: category.slug,
-      // Ensure discounted_price is stored as a Number. If not provided, fallback to the main product price.
-      discounted_price: (req.body.discounted_price !== undefined && req.body.discounted_price !== null)
-        ? Number(req.body.discounted_price)
-        : Number(req.body.Product_price),
+      discounted_price: finalDiscountedPrice,
     });
 
     const savedProduct = await newProduct.save();
 
-    // // ✅ Add debug logging for saved product
-    // console.log('🔍 SAVED PRODUCT:', savedProduct);
-    // console.log('🔍 Saved Hamper_price:', savedProduct.Hamper_price);
-    // console.log('🔍 Saved isHamper_product:', savedProduct.isHamper_product);
+    console.log('✅ SAVED PRODUCT:', {
+      _id: savedProduct._id,
+      Product_name: savedProduct.Product_name,
+      Product_price: savedProduct.Product_price,
+      discounted_price: savedProduct.discounted_price
+    });
 
     // Populate the category details before sending response
     const populatedProduct = await Product.findById(savedProduct._id)
@@ -539,15 +557,30 @@ const updateCategory = async (req, res) => {
 const updateProduct = async (req, res) => {
   try {
 
-    const { id, name, description, price, hamperPrice } = req.body;
+    const { id, name, description, price, hamperPrice, discounted_price } = req.body;
     const response = await Product.findById(id);
     if (!response) throw new Error("invalid product");
+
     response.Product_name = name
     response.Product_discription = description
     response.Product_price = price
     response.Hamper_price = hamperPrice
 
-    response.save();
+    // Handle discounted_price update
+    if (discounted_price !== undefined && discounted_price !== null && discounted_price !== '') {
+      response.discounted_price = Number(discounted_price);
+    } else {
+      // If not provided, keep existing or set to Product_price
+      response.discounted_price = response.discounted_price || Number(price);
+    }
+
+    console.log('🔍 Product Update - Prices:', {
+      Product_price: price,
+      discounted_price_received: discounted_price,
+      final_discounted_price: response.discounted_price
+    });
+
+    await response.save();
     res.status(200).json({
       message: "product updated succesfully",
       status: "success"

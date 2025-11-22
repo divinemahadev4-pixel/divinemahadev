@@ -407,7 +407,7 @@ const getProducts = async (req, res) => {
     console.log(`📊 Backend: Using skip=${skipValue}, limit=${limit}, query:`, query);
 
     // ✅ Select appropriate fields based on product type
-    let selectFields = 'Product_name Product_price Product_image Product_category Product_available';
+    let selectFields = 'Product_name Product_price discounted_price Product_image Product_category Product_available';
     if (type === 'hamper') {
       selectFields += ' isHamper_product Hamper_price';
     }

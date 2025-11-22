@@ -207,15 +207,17 @@ const ProductDetailPage: React.FC = () => {
   });
 
   const transformProductForCart = (prod: Product, qty: number = 1) => {
-    // SWAPPED: Product_price is main price, discounted_price is striked price
+    // FIXED: Product_price is selling price, discounted_price is MRP
     return {
       id: parseInt(prod._id.slice(-8), 16),
       _id: prod._id,
       name: prod.Product_name,
       Product_name: prod.Product_name,
-      price: `₹${prod.Product_price}`, // Main price
-      Product_price: prod.Product_price, // Main price
-      originalPrice: prod.discounted_price ? `₹${prod.discounted_price}` : `₹${prod.Product_price}`, // Striked price
+      price: `₹${prod.Product_price}`, // Selling price
+      Product_price: prod.Product_price, // Selling price
+      originalPrice: prod.discounted_price && prod.discounted_price > prod.Product_price
+        ? `₹${prod.discounted_price}`
+        : `₹${prod.Product_price}`, // MRP (higher price)
       image: prod.Product_image[0] || "",
       Product_image: prod.Product_image,
       isNew: prod.isNew || false,
@@ -288,13 +290,13 @@ const ProductDetailPage: React.FC = () => {
       return;
     }
 
-    // SWAPPED: Use Product_price as main price for payment
-    const mainPrice = product.Product_price;
+    // FIXED: Use Product_price as selling price for payment
+    const sellingPriceForPayment = product.Product_price;
 
     const orderItems = [{
       productId: product._id,
       quantity: quantity,
-      price: mainPrice, // Main price
+      price: sellingPriceForPayment, // Selling price
       name: product.Product_name,
       image: product.Product_image[0] || ""
     }];
@@ -313,9 +315,9 @@ const ProductDetailPage: React.FC = () => {
       shippingAddress,
       "online",
       {
-        itemsTotal: mainPrice * quantity,
+        itemsTotal: sellingPriceForPayment * quantity,
         deliveryCharge: 0,
-        totalAmount: mainPrice * quantity
+        totalAmount: sellingPriceForPayment * quantity
       },
       "cart"
     );
@@ -421,15 +423,15 @@ const ProductDetailPage: React.FC = () => {
     );
   };
 
-  // SWAPPED: Product_price is main price, discounted_price is striked price
-  const hasDiscount = product?.discounted_price && product.discounted_price < product.Product_price;
-  const mainPrice = product?.Product_price || 0; // Main price
-  const displayPrice = mainPrice; // Display main price
-  const strikedPrice = hasDiscount ? product.discounted_price! : mainPrice; // Striked price
+  // FIXED: Product_price is selling price, discounted_price is MRP (original/higher price)
+  const hasDiscount = product?.discounted_price && product.discounted_price > product.Product_price;
+  const sellingPrice = product?.Product_price || 0; // Selling price (lower)
+  const displayPrice = sellingPrice; // Display selling price
+  const mrpPrice = hasDiscount ? product.discounted_price! : sellingPrice; // MRP (higher)
   const discountPercentage = hasDiscount
-    ? Math.round(((product.Product_price - product.discounted_price!) / product.Product_price) * 100)
+    ? Math.round(((product.discounted_price! - product.Product_price) / product.discounted_price!) * 100)
     : 0;
-  const savings = hasDiscount ? product.Product_price - product.discounted_price! : 0;
+  const savings = hasDiscount ? product.discounted_price! - product.Product_price : 0;
 
   // ---- Render ----
   if (loading) {
@@ -556,12 +558,12 @@ const ProductDetailPage: React.FC = () => {
                   </div>
 
                   <div className="space-y-3 p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl border border-amber-100">
-                    {/* SWAPPED: Product_price is main, discounted_price is striked */}
+                    {/* FIXED: Product_price is selling price, discounted_price is MRP */}
                     <div className="flex items-baseline gap-3 flex-wrap">
                       <span className="text-3xl font-bold text-gray-900">₹{displayPrice.toLocaleString()}</span>
                       {hasDiscount && (
                         <>
-                          <span className="text-lg text-gray-400 line-through">₹{strikedPrice.toLocaleString()}</span>
+                          <span className="text-lg text-gray-400 line-through">₹{mrpPrice.toLocaleString()}</span>
                           <Badge className="bg-emerald-100 text-emerald-800 font-semibold text-sm">Save ₹{savings.toLocaleString()}</Badge>
                         </>
                       )}
@@ -815,11 +817,11 @@ const ProductDetailPage: React.FC = () => {
               <div className="relative">
                 <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                   {relatedProducts.map((relatedProduct) => {
-                    const relatedHasDiscount = relatedProduct.discounted_price && relatedProduct.discounted_price < relatedProduct.Product_price;
-                    const relatedDisplayPrice = relatedHasDiscount ? relatedProduct.discounted_price! : relatedProduct.Product_price;
-                    const relatedOriginalPrice = relatedHasDiscount ? relatedProduct.Product_price : Math.round(relatedProduct.Product_price * 1.3);
+                    const relatedHasDiscount = relatedProduct.discounted_price && relatedProduct.discounted_price > relatedProduct.Product_price;
+                    const relatedDisplayPrice = relatedProduct.Product_price; // Selling price
+                    const relatedMrpPrice = relatedHasDiscount ? relatedProduct.discounted_price! : relatedProduct.Product_price;
                     const relatedDiscountPercentage = relatedHasDiscount
-                      ? Math.round(((relatedProduct.Product_price - relatedProduct.discounted_price!) / relatedProduct.Product_price) * 100)
+                      ? Math.round(((relatedProduct.discounted_price! - relatedProduct.Product_price) / relatedProduct.discounted_price!) * 100)
                       : 0;
 
                     return (
@@ -840,7 +842,7 @@ const ProductDetailPage: React.FC = () => {
                               <div className="flex flex-col">
                                 <span className="font-bold text-amber-600 text-base">₹{relatedDisplayPrice.toLocaleString()}</span>
                                 {relatedHasDiscount && (
-                                  <span className="text-xs text-gray-400 line-through">₹{relatedOriginalPrice.toLocaleString()}</span>
+                                  <span className="text-xs text-gray-400 line-through">₹{relatedMrpPrice.toLocaleString()}</span>
                                 )}
                               </div>
                               {relatedHasDiscount && (
