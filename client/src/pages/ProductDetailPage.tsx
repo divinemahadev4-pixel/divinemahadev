@@ -83,7 +83,7 @@ const ProductDetailPage: React.FC = () => {
 
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
-  
+
   // Phone verification and payment processing hooks
   const phoneVerification = usePhoneVerification();
   const { checkoutLoading, processPayment } = usePaymentProcessing();
@@ -92,10 +92,10 @@ const ProductDetailPage: React.FC = () => {
   // Calculate average rating from reviews
   const calculateAverageRating = (reviews: Review[]): number => {
     if (reviews.length === 0) return 0;
-    
+
     const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
     const average = totalRating / reviews.length;
-    
+
     // Round to 1 decimal place
     return Math.round(average * 10) / 10;
   };
@@ -103,7 +103,7 @@ const ProductDetailPage: React.FC = () => {
   // Calculate rating distribution
   const calculateRatingDistribution = (reviews: Review[]) => {
     const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
-    
+
     reviews.forEach(review => {
       if (review.rating >= 1 && review.rating <= 5) {
         distribution[review.rating as keyof typeof distribution]++;
@@ -114,8 +114,8 @@ const ProductDetailPage: React.FC = () => {
   };
 
   // Get current product rating (from reviews or fallback to product rating)
-  const currentProductRating = reviews.length > 0 
-    ? calculateAverageRating(reviews) 
+  const currentProductRating = reviews.length > 0
+    ? calculateAverageRating(reviews)
     : (product?.Product_rating || 0);
 
   // Get rating distribution
@@ -263,15 +263,15 @@ const ProductDetailPage: React.FC = () => {
     if (!product) return;
 
     if (!user) {
-      toast({ 
-        title: "Please login", 
-        description: "You need to be logged in to buy directly", 
-        variant: "destructive" 
+      toast({
+        title: "Please login",
+        description: "You need to be logged in to buy directly",
+        variant: "destructive"
       });
       navigate("/login");
       return;
     }
-    
+
     setBuying(true);
     setDirectBuyProduct(product);
     phoneVerification.setShowPhoneVerification(true);
@@ -280,17 +280,17 @@ const ProductDetailPage: React.FC = () => {
 
   const handleDirectBuyPayment = async (product: Product) => {
     if (!phoneVerification.phoneVerified) {
-      toast({ 
-        title: "Phone Not Verified", 
-        description: "Please verify your phone number first", 
-        variant: "destructive" 
+      toast({
+        title: "Phone Not Verified",
+        description: "Please verify your phone number first",
+        variant: "destructive"
       });
       return;
     }
 
     // SWAPPED: Use Product_price as main price for payment
     const mainPrice = product.Product_price;
-    
+
     const orderItems = [{
       productId: product._id,
       quantity: quantity,
@@ -300,11 +300,11 @@ const ProductDetailPage: React.FC = () => {
     }];
 
     const shippingAddress = {
-      fullName: user?.firstName || "",
-      address: "",
-      city: "",
-      state: "",
-      pinCode: "",
+      fullName: user?.firstName || "Customer",
+      address: "To be provided",
+      city: "To be provided",
+      state: "To be provided",
+      pinCode: "000000",
       phone: phoneVerification.phoneNumber
     };
 
@@ -317,7 +317,7 @@ const ProductDetailPage: React.FC = () => {
         deliveryCharge: 0,
         totalAmount: mainPrice * quantity
       },
-      "direct_buy"
+      "cart"
     );
 
     if (success) {
@@ -410,12 +410,11 @@ const ProductDetailPage: React.FC = () => {
     return (
       <div className="flex items-center gap-1">
         {Array.from({ length: 5 }).map((_, i) => (
-          <Star 
-            key={i} 
-            size={size} 
-            className={`${i < Math.floor(rating) ? "fill-amber-400 text-amber-400" : "fill-amber-200 text-amber-200"} ${
-              i === Math.floor(rating) && rating % 1 > 0 ? "text-amber-400" : ""
-            }`} 
+          <Star
+            key={i}
+            size={size}
+            className={`${i < Math.floor(rating) ? "fill-amber-400 text-amber-400" : "fill-amber-200 text-amber-200"} ${i === Math.floor(rating) && rating % 1 > 0 ? "text-amber-400" : ""
+              }`}
           />
         ))}
       </div>
@@ -427,7 +426,7 @@ const ProductDetailPage: React.FC = () => {
   const mainPrice = product?.Product_price || 0; // Main price
   const displayPrice = mainPrice; // Display main price
   const strikedPrice = hasDiscount ? product.discounted_price! : mainPrice; // Striked price
-  const discountPercentage = hasDiscount 
+  const discountPercentage = hasDiscount
     ? Math.round(((product.Product_price - product.discounted_price!) / product.Product_price) * 100)
     : 0;
   const savings = hasDiscount ? product.Product_price - product.discounted_price! : 0;
@@ -559,7 +558,7 @@ const ProductDetailPage: React.FC = () => {
                   <div className="space-y-3 p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl border border-amber-100">
                     {/* SWAPPED: Product_price is main, discounted_price is striked */}
                     <div className="flex items-baseline gap-3 flex-wrap">
-                      <span className="text-3xl font-bold text-amber-600">₹{displayPrice.toLocaleString()}</span>
+                      <span className="text-3xl font-bold text-gray-900">₹{displayPrice.toLocaleString()}</span>
                       {hasDiscount && (
                         <>
                           <span className="text-lg text-gray-400 line-through">₹{strikedPrice.toLocaleString()}</span>
@@ -598,7 +597,7 @@ const ProductDetailPage: React.FC = () => {
               <div className="border-b border-amber-200 overflow-x-auto">
                 <div className="flex min-w-max">
                   {[
-                    { key: "description", label: "Divine Description" }, 
+                    { key: "description", label: "Divine Description" },
                     { key: "specifications", label: "Details & Blessings" }
                   ].map((tab) => (
                     <button key={tab.key} onClick={() => setActiveTab(tab.key)} className={`px-6 py-4 font-semibold text-sm transition-all duration-300 relative flex-shrink-0 ${activeTab === tab.key ? "text-amber-600 bg-amber-50 border-b-2 border-amber-500" : "text-gray-600 hover:text-amber-600 hover:bg-amber-50/50"}`}>
@@ -630,9 +629,9 @@ const ProductDetailPage: React.FC = () => {
                       <h4 className="font-semibold text-gray-900 mb-4 text-base">Product Details</h4>
                       <div className="space-y-3">
                         {[
-                          { label: "Category", value: product.Product_category.category }, 
-                          { label: "Material", value: "Sacred Materials" }, 
-                          { label: "Warranty", value: "2 Years" }, 
+                          { label: "Category", value: product.Product_category.category },
+                          { label: "Material", value: "Sacred Materials" },
+                          { label: "Warranty", value: "2 Years" },
                           { label: "Return Policy", value: "30 Days" }
                         ].map((spec, idx) => (
                           <div key={idx} className="flex justify-between py-2 border-b border-amber-100">
@@ -667,7 +666,7 @@ const ProductDetailPage: React.FC = () => {
                 </h2>
                 <p className="text-amber-100 mt-2">See what our spiritual community says about this sacred product</p>
               </div>
-              
+
               <CardContent className="p-6">
                 <div className="grid lg:grid-cols-3 gap-8">
                   {/* Review Stats */}
@@ -683,21 +682,21 @@ const ProductDetailPage: React.FC = () => {
                           <p className="text-gray-600 text-sm">Based on</p>
                           <p className="font-semibold text-gray-900">{reviews.length} Divine Reviews</p>
                         </div>
-                        
+
                         {/* Rating Distribution */}
                         {reviews.length > 0 && (
                           <div className="space-y-2 mt-4">
                             {[5, 4, 3, 2, 1].map((rating) => {
                               const count = ratingDistribution[rating as keyof typeof ratingDistribution];
                               const percentage = reviews.length > 0 ? (count / reviews.length) * 100 : 0;
-                              
+
                               return (
                                 <div key={rating} className="flex items-center gap-2 text-sm">
                                   <span className="w-4 text-gray-600">{rating}</span>
                                   <Star size={12} className="text-amber-400 fill-amber-400" />
                                   <div className="flex-1 bg-gray-200 rounded-full h-2">
-                                    <div 
-                                      className="bg-amber-500 h-2 rounded-full" 
+                                    <div
+                                      className="bg-amber-500 h-2 rounded-full"
                                       style={{ width: `${percentage}%` }}
                                     />
                                   </div>
@@ -716,11 +715,11 @@ const ProductDetailPage: React.FC = () => {
                       <form onSubmit={submitReview} className="space-y-4">
                         <div>
                           <label className="text-sm font-medium text-gray-700">Your Name</label>
-                          <input 
-                            value={nameInput} 
-                            onChange={(e) => setNameInput(e.target.value)} 
-                            className="mt-2 w-full border border-amber-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500" 
-                            placeholder="Your name" 
+                          <input
+                            value={nameInput}
+                            onChange={(e) => setNameInput(e.target.value)}
+                            className="mt-2 w-full border border-amber-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                            placeholder="Your name"
                           />
                         </div>
                         <div>
@@ -731,17 +730,17 @@ const ProductDetailPage: React.FC = () => {
                         </div>
                         <div>
                           <label className="text-sm font-medium text-gray-700">Your Review</label>
-                          <textarea 
-                            value={reviewText} 
-                            onChange={(e) => setReviewText(e.target.value)} 
-                            rows={4} 
-                            className="mt-2 w-full border border-amber-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500" 
+                          <textarea
+                            value={reviewText}
+                            onChange={(e) => setReviewText(e.target.value)}
+                            rows={4}
+                            className="mt-2 w-full border border-amber-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
                             placeholder="Share your divine experience with this product..."
                           />
                         </div>
-                        <Button 
-                          type="submit" 
-                          disabled={submittingReview} 
+                        <Button
+                          type="submit"
+                          disabled={submittingReview}
                           className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600"
                         >
                           {submittingReview ? "Submitting..." : "Submit Your Review"}
@@ -778,10 +777,10 @@ const ProductDetailPage: React.FC = () => {
                                   <div>
                                     <div className="font-semibold text-gray-900">{r.name}</div>
                                     <div className="text-xs text-gray-500">
-                                      {r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-IN', { 
-                                        year: 'numeric', 
-                                        month: 'long', 
-                                        day: 'numeric' 
+                                      {r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-IN', {
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric'
                                       }) : "Recently"}
                                     </div>
                                   </div>
@@ -819,7 +818,7 @@ const ProductDetailPage: React.FC = () => {
                     const relatedHasDiscount = relatedProduct.discounted_price && relatedProduct.discounted_price < relatedProduct.Product_price;
                     const relatedDisplayPrice = relatedHasDiscount ? relatedProduct.discounted_price! : relatedProduct.Product_price;
                     const relatedOriginalPrice = relatedHasDiscount ? relatedProduct.Product_price : Math.round(relatedProduct.Product_price * 1.3);
-                    const relatedDiscountPercentage = relatedHasDiscount 
+                    const relatedDiscountPercentage = relatedHasDiscount
                       ? Math.round(((relatedProduct.Product_price - relatedProduct.discounted_price!) / relatedProduct.Product_price) * 100)
                       : 0;
 

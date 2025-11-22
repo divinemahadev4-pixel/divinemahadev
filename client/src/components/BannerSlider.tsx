@@ -24,15 +24,18 @@ const SWIPER_MODULES = [Autoplay, Pagination, EffectFade, Navigation];
 
 export const BannerScrollingLine = () => {
   return (
-    <div className="w-full overflow-hidden bg-orange-500 py-2 shadow-md">
+    <div className="w-full overflow-hidden bg-gradient-to-r from-orange-500 via-orange-600 to-orange-500 py-2.5 shadow-md">
       <div
         className="whitespace-nowrap animate-scroll font-semibold text-white text-sm flex items-center gap-8 px-4 drop-shadow-[0_0_4px_black]"
       >
-        <span className="bg-white/20 px-2 py-1 rounded-md shadow-sm">🚚 Free Shipping All Over India</span>
-        <span>🔥 Cash on Delivery Available</span>
-        <span>💳 15% OFF on Prepaid Orders</span>
-        <span>🛕 Trusted Divine Seller</span>
+        <span className="bg-white/20 px-3 py-1 rounded-md shadow-sm">🚚 Free Shipping All Over India</span>
+        <span>💰 Cash on Delivery Available</span>
+        <span>🎁 15% OFF on Prepaid Orders</span>
+        <span>🙏 Trusted Divine Seller</span>
+        <span>⭐ 100% Authentic Products</span>
         <span>✨ सच्‍चाई और गुणवत्ता का वादा</span>
+        <span>🕉️ Blessed with Divine Energy</span>
+        <span>📦 Secure Packaging</span>
       </div>
       <style>
         {`
@@ -41,7 +44,7 @@ export const BannerScrollingLine = () => {
             100% { transform: translateX(-100%); }
           }
           .animate-scroll {
-            animation: scrollAnim 18s linear infinite;
+            animation: scrollAnim 25s linear infinite;
           }
         `}
       </style>

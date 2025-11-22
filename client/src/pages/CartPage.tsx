@@ -111,11 +111,11 @@ const CartPage = () => {
     }));
 
     const deliveryCharge = 0;
-    
+
     // Calculate final amount based on payment method
     let finalAmount = totalPrice + deliveryCharge;
     let discountAmount = 0;
-    
+
     if (paymentMethod === "online") {
       discountAmount = calculateOnlineDiscount(totalPrice);
       finalAmount = getOnlineDiscountedPrice(totalPrice) + deliveryCharge;
@@ -128,8 +128,7 @@ const CartPage = () => {
       {
         itemsTotal: totalPrice,
         deliveryCharge: deliveryCharge,
-        totalAmount: finalAmount,
-        discountAmount: discountAmount
+        totalAmount: finalAmount
       },
       "cart"
     );
@@ -139,7 +138,7 @@ const CartPage = () => {
       setIsCheckingOut(false);
       setSelectedPaymentMethod(null);
       phoneVerification.resetPhoneVerification();
-      
+
       // Show success message with discount info
       if (paymentMethod === "online") {
         toast({
@@ -179,7 +178,7 @@ const CartPage = () => {
 
   if (cart.length === 0) {
     return (
-      <div 
+      <div
         className="min-h-screen pt-20 pb-6 px-4 flex items-center justify-center"
         style={{
           background: "linear-gradient(135deg, #ffffff 0%, #fef7f0 40%, #fffbeb 100%)",
@@ -208,7 +207,7 @@ const CartPage = () => {
 
   return (
     <>
-      <div 
+      <div
         className="min-h-screen pt-20 pb-6 px-4 overflow-x-hidden"
         style={{
           background: "linear-gradient(135deg, #ffffff 0%, #fef7f0 40%, #fffbeb 100%)",
@@ -249,7 +248,7 @@ const CartPage = () => {
                 >
                   <div className="p-4 flex flex-col sm:flex-row gap-4">
                     {/* Product Image */}
-                    <div 
+                    <div
                       className="flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden cursor-pointer bg-gradient-to-br from-orange-50 to-white"
                       onClick={() => handleProductClick(getProductId(item))}
                     >
@@ -263,7 +262,7 @@ const CartPage = () => {
                     {/* Product Details */}
                     <div className="flex-grow min-w-0">
                       <div className="flex justify-between items-start mb-2">
-                        <h3 
+                        <h3
                           className="font-semibold text-orange-900 cursor-pointer hover:text-orange-700 transition-colors line-clamp-2"
                           onClick={() => handleProductClick(getProductId(item))}
                         >
@@ -458,7 +457,7 @@ const CartPage = () => {
                       <span>Delivery</span>
                       <span>FREE</span>
                     </div>
-                    
+
                     {/* Online Payment Discount Display */}
                     <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-3 mt-2">
                       <div className="flex items-center justify-between mb-1">
@@ -469,7 +468,7 @@ const CartPage = () => {
                         Pay online and save big on your divine purchase!
                       </p>
                     </div>
-                    
+
                     <div className="flex justify-between font-bold text-base text-orange-700 pt-2 border-t border-orange-200">
                       <span>Total Amount</span>
                       <div className="text-right">

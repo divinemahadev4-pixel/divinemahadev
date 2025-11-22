@@ -112,11 +112,11 @@ const SaveProduct = async (req, res) => {
     if (req.body.isHamper_product && req.body.Hamper_price) {
       const regularPrice = parseFloat(req.body.Product_price);
       const hamperPrice = parseFloat(req.body.Hamper_price);
-      
+
       if (hamperPrice <= 0) {
         return res.status(400).json({ error: "Hamper price must be greater than 0" });
       }
-      
+
       if (hamperPrice >= regularPrice) {
         return res.status(400).json({ error: "Hamper price must be less than regular price" });
       }
@@ -138,7 +138,10 @@ const SaveProduct = async (req, res) => {
       Product_available: req.body.Product_available !== false,
       Product_public_id: req.body.Product_public_id || "undcnwe ic jwdn cjw ncjkw cjw",
       Product_slug: category.slug,
-      discounted_price: req.body.discounted_price || "50"
+      // Ensure discounted_price is stored as a Number. If not provided, fallback to the main product price.
+      discounted_price: (req.body.discounted_price !== undefined && req.body.discounted_price !== null)
+        ? Number(req.body.discounted_price)
+        : Number(req.body.Product_price),
     });
 
     const savedProduct = await newProduct.save();
@@ -174,7 +177,7 @@ const SaveProduct = async (req, res) => {
 const DeleteProduct = async (req, res) => {
   try {
     const { _id } = req.body;
-    
+
     const find = await Product.findById(_id);
     const ImageLinksArray = find.Product_image;
 
@@ -183,19 +186,19 @@ const DeleteProduct = async (req, res) => {
       // Extract public ID from Cloudinary URL
       // URL format: https://res.cloudinary.com/diypnkid6/image/upload/v1759769713/AnokhiAda/Product/general/upload_1759769645113_1759769694.jpg
       const urlParts = imageUrl.split('/');
-      
+
       // Find the index where 'upload' appears and get everything after it
       const uploadIndex = urlParts.indexOf('upload');
       if (uploadIndex !== -1) {
         // Get the path after 'upload' and remove the file extension
         const pathAfterUpload = urlParts.slice(uploadIndex + 1).join('/');
         const publicId = pathAfterUpload.replace(/\.[^/.]+$/, ""); // Remove file extension
-        
+
         console.log(`Deleting image with public ID: ${publicId}`);
-        
+
         // Delete image from Cloudinary
         const cloudinary_Delete_Result = await cloudinary.uploader.destroy(publicId);
-        
+
         if (cloudinary_Delete_Result.result !== 'ok') {
           console.warn(`Failed to delete image: ${publicId}`);
         }
@@ -427,28 +430,28 @@ const getCarts = async (req, res) => {
   }
 };
 
-const outOFstock = async(req,res)=>{
-  try{
-    const { id , status } = req.body;
+const outOFstock = async (req, res) => {
+  try {
+    const { id, status } = req.body;
 
     // 1. Field missing check (Corrected from previous fix)
-    if(!id || !("status" in req.body)) throw new Error("Field missing!");
-    
+    if (!id || !("status" in req.body)) throw new Error("Field missing!");
+
     // 2. ✅ FIX: Product find karte samay 'await' ka use karein.
-    const productDoc = await Product.findById(id); 
-    
-    if(!productDoc) throw new Error("Product does not exist");
-    
+    const productDoc = await Product.findById(id);
+
+    if (!productDoc) throw new Error("Product does not exist");
+
     // 3. Status update karein
     productDoc.Product_available = status;
-    
+
     // 4. ✅ FIX: 'productDoc' (jo ki ek Mongoose Document hai) par save() call karein aur 'await' use karein.
     await productDoc.save();
-    
+
     res.status(200).send("Updated successfully");
-  }catch(e){
+  } catch (e) {
     res.status(400).json({
-      message:"Something went wrong! "+e.message
+      message: "Something went wrong! " + e.message
     })
   }
 }
@@ -532,13 +535,13 @@ const updateCategory = async (req, res) => {
   }
 };
 
- 
-const updateProduct = async (req,res)=>{
-  try{
 
-    const {id , name , description , price , hamperPrice}  = req.body;
+const updateProduct = async (req, res) => {
+  try {
+
+    const { id, name, description, price, hamperPrice } = req.body;
     const response = await Product.findById(id);
-    if(!response) throw new Error("invalid product");
+    if (!response) throw new Error("invalid product");
     response.Product_name = name
     response.Product_discription = description
     response.Product_price = price
@@ -546,15 +549,15 @@ const updateProduct = async (req,res)=>{
 
     response.save();
     res.status(200).json({
-      message:"product updated succesfully",
-      status:"success"
+      message: "product updated succesfully",
+      status: "success"
     })
-  }catch (e) {
+  } catch (e) {
     res.status(500).json({
       message: e.message,
       status: "failed"
     });
-}
+  }
 }
 
 module.exports = {
