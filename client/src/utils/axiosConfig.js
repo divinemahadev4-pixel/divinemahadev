@@ -58,8 +58,21 @@
 
 import axios from 'axios';
 import { TokenManager } from './tokenManager';
+ 
+function getApiBaseUrl() {
+  if (import.meta.env.VITE_REACT_APP_API_URL) {
+    return import.meta.env.VITE_REACT_APP_API_URL;
+  }
+  if (typeof window !== "undefined") {
+    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+      return "http://localhost:3000";
+    }
+    return window.location.origin;
+  }
+  return "http://localhost:3000";
+}
 
-const API_URL = import.meta.env.VITE_REACT_APP_API_URL || "http://localhost:3000";
+const API_URL = getApiBaseUrl();
 
 const axiosInstance = axios.create({
   baseURL: API_URL, 
