@@ -205,8 +205,6 @@ const Orders = () => {
     const fetchOrders = async () => {
       setLoading(true);
       try {
-        if (!TokenManager.getToken("user")) throw new Error("Authentication required");
-        
         // Updated to match backend RazorpayRoutes: GET /razorpay/my-orders/:userId
         const res = await axiosInstance.get(`/razorpay/my-orders/${userId}`);
         const list = res.data.orders as BackendOrder[];
