@@ -21,6 +21,8 @@ interface Product {
   rating: number;
   isNew?: boolean;
   Product_discription?: string;
+  reviewCount?: number;
+  Product_reviewCount?: number;
 }
 
 interface ProductCardProps {
@@ -48,10 +50,14 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const productImage = product.Product_image ? product.Product_image[0] : product.image;
   const productDescription = product.Product_discription || "";
   const productIsNew = product.isNew || false;
+  const productReviewCount =
+    typeof product.Product_reviewCount === "number"
+      ? product.Product_reviewCount
+      : product.reviewCount;
 
   return (
-    <div className="group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col">
-      <div className="relative aspect-square overflow-hidden">
+    <div className="group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col h-full">
+      <div className="relative aspect-[4/3] overflow-hidden">
         <img
           src={productImage}
           alt={productName}
@@ -85,12 +91,19 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       </div>
 
       <div className="p-5 flex-grow flex flex-col">
-        <div className="mb-3 flex justify-between items-start">
-          <h3 className="font-bold text-lg text-gray-900 line-clamp-2 leading-tight">{productName}</h3>
+        <div className="mb-3 flex justify-between items-start gap-2">
+          <h3 className="font-bold text-lg text-gray-900 line-clamp-2 leading-tight flex-1">{productName}</h3>
 
-          <div className="flex items-center bg-amber-50 text-amber-700 px-2 py-1 rounded">
-            <Star size={16} className="fill-amber-400 stroke-none" />
-            <span className="text-sm font-semibold ml-1">{product.rating}</span>
+          <div className="flex flex-col items-end gap-0.5">
+            <div className="flex items-center bg-amber-50 text-amber-700 px-2 py-1 rounded">
+              <Star size={16} className="fill-amber-400 stroke-none" />
+              <span className="text-sm font-semibold ml-1">{product.rating.toFixed(1)}</span>
+            </div>
+            {typeof productReviewCount === "number" && productReviewCount > 0 && (
+              <span className="text-[11px] text-gray-500">
+                ({productReviewCount.toLocaleString()} reviews)
+              </span>
+            )}
           </div>
         </div>
 

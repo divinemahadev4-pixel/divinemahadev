@@ -352,11 +352,53 @@ export const WishlistProvider = ({ children }: { children: ReactNode }) => {
         title: isCurrentlyInWishlist ? "Removed from wishlist" : "Added to wishlist",
         description: `${product.Product_name} ${isCurrentlyInWishlist ? 'removed from' : 'added to'} wishlist`,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error toggling wishlist:", error);
+
+      const message = String(error?.message || "");
+
+      // If unauthorized (401), gracefully fall back to local wishlist behaviour
+      if (message.includes("401")) {
+        setWishlist((prevWishlist) => {
+          const existingIndex = prevWishlist.findIndex(
+            (item) => item.product._id === product._id
+          );
+
+          if (existingIndex !== -1) {
+            // Remove from wishlist
+            return prevWishlist.filter((item) => item.product._id !== product._id);
+          } else {
+            // Add to wishlist
+            const newItem: WishlistItem = {
+              product: product,
+              quantity: Math.max(1, quantity),
+              dateAdded: new Date().toISOString(),
+            };
+            return [...prevWishlist, newItem];
+          }
+        });
+
+        toast({
+          title: isCurrentlyInWishlist
+            ? "Removed from wishlist"
+            : "Added to wishlist",
+          description: `${product.Product_name} ${
+            isCurrentlyInWishlist ? "removed from" : "added to"
+          } wishlist (local)`,
+        });
+
+        return;
+      }
+
+      // For other errors, surface more helpful information
+      let description = "Failed to update wishlist";
+      if (message) {
+        description = message;
+      }
+
       toast({
         title: "Error",
-        description: "Failed to update wishlist",
+        description,
         variant: "destructive",
       });
     } finally {

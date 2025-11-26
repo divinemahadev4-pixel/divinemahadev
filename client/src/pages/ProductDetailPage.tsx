@@ -815,13 +815,18 @@ const ProductDetailPage: React.FC = () => {
                 <div className="grid lg:grid-cols-3 gap-8">
                   {/* Review Stats */}
                   <div className="lg:col-span-1">
-                    <div className="bg-amber-50 rounded-2xl p-6 border border-amber-200">
-                      <h3 className="font-bold text-gray-900 text-lg mb-4">Review Summary</h3>
+                    <div className="bg-amber-50 rounded-2xl p-4 sm:p-6 border border-amber-200">
+                      <h3 className="font-bold text-gray-900 text-base sm:text-lg mb-4">Review Summary</h3>
                       <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <span className="text-4xl font-bold text-amber-600">{currentProductRating.toFixed(1)}</span>
-                          {renderStarRating(currentProductRating, 20)}
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <span className="text-3xl sm:text-4xl font-bold text-amber-600">
+                            {currentProductRating.toFixed(1)}
+                          </span>
+                          <div className="flex-shrink-0">
+                            {renderStarRating(currentProductRating, 20)}
+                          </div>
                         </div>
+
                         <div className="text-center">
                           <p className="text-gray-600 text-sm">Based on</p>
                           <p className="font-semibold text-gray-900">{reviews.length} Divine Reviews</p>
@@ -835,16 +840,21 @@ const ProductDetailPage: React.FC = () => {
                               const percentage = reviews.length > 0 ? (count / reviews.length) * 100 : 0;
 
                               return (
-                                <div key={rating} className="flex items-center gap-2 text-sm">
-                                  <span className="w-4 text-gray-600">{rating}</span>
-                                  <Star size={12} className="text-amber-400 fill-amber-400" />
-                                  <div className="flex-1 bg-gray-200 rounded-full h-2">
+                                <div
+                                  key={rating}
+                                  className="flex items-center gap-2 text-xs sm:text-sm w-full min-w-0"
+                                >
+                                  <span className="w-4 text-gray-600 flex-shrink-0">{rating}</span>
+                                  <Star size={12} className="text-amber-400 fill-amber-400 flex-shrink-0" />
+                                  <div className="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden">
                                     <div
                                       className="bg-amber-500 h-2 rounded-full"
                                       style={{ width: `${percentage}%` }}
                                     />
                                   </div>
-                                  <span className="w-8 text-gray-600 text-xs">{count}</span>
+                                  <span className="w-6 text-right text-gray-600 text-[10px] sm:text-xs flex-shrink-0">
+                                    {count}
+                                  </span>
                                 </div>
                               );
                             })}
@@ -913,13 +923,15 @@ const ProductDetailPage: React.FC = () => {
                         <div className="space-y-6 max-h-[600px] overflow-y-auto pr-4">
                           {reviews.map((r, idx) => (
                             <div key={r._id || idx} className="border border-amber-100 rounded-2xl p-6 bg-amber-50/30 hover:bg-amber-50/50 transition-colors">
-                              <div className="flex items-start justify-between mb-4">
-                                <div className="flex items-center gap-3">
+                              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+                                <div className="flex items-center gap-3 min-w-0">
                                   <div className="w-12 h-12 rounded-full bg-gradient-to-r from-amber-400 to-orange-400 flex items-center justify-center font-semibold text-white text-lg">
                                     {r.name?.charAt(0)?.toUpperCase() || "U"}
                                   </div>
                                   <div>
-                                    <div className="font-semibold text-gray-900">{r.name}</div>
+                                    <div className="font-semibold text-gray-900 break-words max-w-[220px] sm:max-w-xs">
+                                      {r.name}
+                                    </div>
                                     <div className="text-xs text-gray-500">
                                       {r.createdAt ? new Date(r.createdAt).toLocaleDateString('en-IN', {
                                         year: 'numeric',
@@ -929,11 +941,12 @@ const ProductDetailPage: React.FC = () => {
                                     </div>
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-1 bg-white px-3 py-1 rounded-full border border-amber-200">
+                                <div className="flex items-center gap-1 bg-white px-3 py-1 rounded-full border border-amber-200 self-start">
                                   {renderStarRating(r.rating, 16)}
                                   <span className="ml-2 text-sm font-semibold text-amber-600">{r.rating}.0</span>
                                 </div>
                               </div>
+
                               <div className="text-gray-700 leading-relaxed whitespace-pre-line bg-white p-4 rounded-lg border border-amber-100">
                                 {r.review}
                               </div>

@@ -1,7 +1,8 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axiosInstance from "@/utils/axiosConfig";
-import { Sparkles, Search, SortAsc, Heart, ShoppingCart, Eye, Crown, CreditCard } from "lucide-react";
+import { Sparkles, Search, SortAsc, Heart, ShoppingCart, Eye, Crown, CreditCard, Star } from "lucide-react";
+
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
@@ -31,6 +32,7 @@ interface Product {
   isNew?: boolean;
   Product_available?: boolean;
   Product_rating?: number;
+  Product_reviewCount?: number;
 }
 
 const CategoryPage = () => {
@@ -412,7 +414,8 @@ const CategoryPage = () => {
                 return (
                   <motion.div
                     key={product._id}
-                    className="group rounded-xl border border-amber-200 shadow-lg hover:shadow-2xl hover:shadow-amber-300/20 transition-all duration-500 overflow-hidden flex flex-col hover:-translate-y-2 hover:scale-[1.02] bg-white"
+                    className="group rounded-xl border border-amber-200 shadow-lg hover:shadow-2xl hover:shadow-amber-300/20 transition-all duration-500 overflow-hidden flex flex-col hover:-translate-y-2 hover:scale-[1.02] bg-white h-full"
+
                     onMouseEnter={() => setHoveredProduct(product._id)}
                     onMouseLeave={() => setHoveredProduct(null)}
                     initial={{ opacity: 0, y: 20 }}
@@ -486,12 +489,28 @@ const CategoryPage = () => {
                     <div className="p-4 flex-grow flex flex-col bg-transparent">
                       <div className="mb-3">
                         <h3
-                          className="font-bold text-sm text-gray-900 line-clamp-2 leading-tight cursor-pointer hover:text-amber-600 transition-colors mb-2 min-h-[40px]"
+                          className="font-bold text-sm text-gray-900 line-clamp-2 leading-tight cursor-pointer hover:text-amber-600 transition-colors mb-1 min-h-[40px]"
                           style={{ fontFamily: "'Playfair Display', serif" }}
                           onClick={() => handleProductClick(product._id)}
                         >
                           {product.Product_name}
                         </h3>
+
+                        {typeof product.Product_rating === "number" && product.Product_rating > 0 && (
+                          <div className="flex items-center gap-1">
+                            <div className="flex items-center bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded">
+                              <Star className="w-3 h-3 fill-amber-400 stroke-none" />
+                              <span className="text-[11px] font-semibold ml-0.5">
+                                {product.Product_rating.toFixed(1)}
+                              </span>
+                            </div>
+                            {typeof product.Product_reviewCount === "number" && product.Product_reviewCount > 0 && (
+                              <span className="text-[10px] text-gray-500">
+                                ({product.Product_reviewCount.toLocaleString()} reviews)
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       <div className="mt-auto">

@@ -3,10 +3,12 @@ import { Button } from "@/components/ui/button";
 import {
   Heart,
   Star,
+  ShoppingCart,
+  Eye,
   Sparkles,
   Sun,
   Zap,
-  Eye,
+  CreditCard,
 } from "lucide-react";
 import { useWishlist } from "./WishlistContext";
 import { useCart } from "./CartContext";
@@ -16,6 +18,7 @@ import axios from "axios";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+// Import phone verification and payment processing
 import { usePhoneVerification } from "@/hooks/usePhoneVerification";
 import { usePaymentProcessing } from "@/hooks/usePaymentProcessing";
 import PhoneVerificationModal from "@/components/PhoneVerificationModal";
@@ -27,7 +30,7 @@ interface ApiProduct {
   _id: string;
   Product_name: string;
   Product_price: number;
-  discounted_price: number;
+  discounted_price: number; // New field - this is the actual price
   Product_image: string[];
   Product_rating?: number;
   isNew?: boolean;
@@ -38,9 +41,11 @@ interface ApiProduct {
   Product_reviewCount?: number;
 }
 
+
+
 const currency = (n: number) => `₹${n.toLocaleString()}`;
 
-// Spiritual Symbol Component
+// Spiritual Symbol Component with cleaner design
 const SpiritualSymbol = () => (
   <div className="relative w-14 h-14 flex items-center justify-center">
     <motion.div
@@ -68,21 +73,36 @@ const ProductCard: React.FC<{
     product,
     onClick,
     onWishlistToggle,
+    onAddToCart,
     inWishlist,
+    onDirectBuy,
   }) => {
+    const [adding, setAdding] = useState(false);
+    const [buying, setBuying] = useState(false);
     const [imageLoaded, setImageLoaded] = useState(false);
 
+    // FIXED: Product_price is selling price, discounted_price is MRP (original/higher price)
     const hasDiscount = useMemo(() => {
       const mrp = product.discounted_price as any;
       const sellingPrice = product.Product_price;
+      
+      // Debug log for first few products
+      if (product.Product_name.includes("Test")) {
+        console.log(`🔍 Product: ${product.Product_name}`);
+        console.log(`   Selling Price: ${sellingPrice}`);
+        console.log(`   MRP (discounted_price): ${mrp}`);
+        console.log(`   Has Discount: ${typeof mrp === "number" && !isNaN(mrp) && mrp > 0 && mrp > sellingPrice}`);
+      }
+      
       return (
         typeof mrp === "number" &&
         !isNaN(mrp) &&
         mrp > 0 &&
-        mrp > sellingPrice
+        mrp > sellingPrice // MRP should be higher than selling price
       );
-    }, [product.Product_price, product.discounted_price]);
+    }, [product.Product_price, product.discounted_price, product.Product_name]);
 
+    // Calculate discount percentage: (MRP - Selling Price) / MRP * 100
     const discountPercentage = useMemo(() => {
       if (!hasDiscount) return 0;
       const mrp = product.discounted_price as number;
@@ -90,7 +110,30 @@ const ProductCard: React.FC<{
       return Math.round(((mrp - sellingPrice) / mrp) * 100);
     }, [hasDiscount, product.Product_price, product.discounted_price]);
 
-    const sellingPrice = product.Product_price;
+    // Get prices - Product_price is selling price, discounted_price is MRP
+    const sellingPrice = product.Product_price; // Current selling price (lower)
+    const mrpPrice = hasDiscount
+      ? (product.discounted_price as number)
+      : product.Product_price; // MRP/Original price (higher)
+
+    const handleAdd = () => {
+      if (adding) return;
+      setAdding(true);
+      onAddToCart(product);
+      setTimeout(() => setAdding(false), 700);
+    };
+
+    const handleDirectBuy = () => {
+      if (buying) return;
+      setBuying(true);
+      onDirectBuy(product);
+      setTimeout(() => setBuying(false), 700);
+    };
+
+    const description =
+      product.Product_description ||
+      product.Product_discription ||
+      "Blessed spiritual item with divine energy.";
 
     const hasRating =
       typeof product.Product_rating === "number" &&
@@ -106,21 +149,20 @@ const ProductCard: React.FC<{
 
     return (
       <motion.div
-        layout
+        tabIndex={0}
         onClick={() => onClick(product._id)}
-        // Added p-3 here to create spacing between card edge and image (like a frame)
-        // Kept your "Background Box" style (white bg, border, shadow)
-        className="group relative flex flex-col h-full bg-[#FFFBF7] md:bg-white rounded-2xl border border-orange-100/60 shadow-sm hover:shadow-xl hover:border-orange-200 transition-all duration-300 overflow-hidden cursor-pointer p-2.5 md:p-3"
+        className="group bg-white border border-orange-100/50 shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer flex flex-col h-full focus:outline-none focus:ring-1 focus:ring-orange-200 overflow-hidden"
+        aria-label={product.Product_name}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        whileHover={{ y: -4 }}
+        whileHover={{ y: -4, scale: 1.01 }}
+        transition={{ duration: 0.4 }}
       >
-        {/* Image Container - Rounded corners INSIDE the card */}
-        <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-gray-50 mb-3">
+        <div className="relative aspect-[4/3] overflow-hidden bg-white">
           {product.Product_image?.[0] ? (
             <>
               {!imageLoaded && (
-                <div className="absolute inset-0 flex items-center justify-center">
+                <div className="absolute inset-0 bg-white flex items-center justify-center">
                   <SpiritualSymbol />
                 </div>
               )}
@@ -128,94 +170,133 @@ const ProductCard: React.FC<{
                 src={product.Product_image[0]}
                 alt={product.Product_name}
                 loading="lazy"
-                className={`w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-110 ${
+                className={`block w-full h-full object-cover object-center transition-all duration-500 group-hover:scale-105 ${
                   imageLoaded ? "opacity-100" : "opacity-0"
                 }`}
                 onLoad={() => setImageLoaded(true)}
               />
             </>
           ) : (
-            <div className="w-full h-full flex items-center justify-center">
+            <div className="w-full h-full bg-white text-orange-700 flex items-center justify-center select-none">
               <SpiritualSymbol />
             </div>
           )}
 
-          {/* New Badge */}
-          {product.isNew && (
-            <div className="absolute top-2 left-2 z-10">
-              <Badge className="bg-green-600 text-white text-[10px] px-2 py-0.5 border-0 shadow-sm font-bold tracking-wide">
-                NEW
-              </Badge>
-            </div>
-          )}
+          {/* Subtle overlay */}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/5 to-white/10" />
 
-          {/* Wishlist Button - Floating on top right */}
+          {/* Product Status Badges */}
+          <div className="absolute top-3 right-3 flex flex-col gap-2">
+            {product.isNew && (
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
+              >
+                <Badge className="bg-gradient-to-r from-emerald-400 to-green-500 text-white font-semibold text-xs px-2 py-1 border-0 shadow-sm">
+                  <Zap className="w-3 h-3 mr-1" />
+                  NEW
+                </Badge>
+              </motion.div>
+            )}
+          </div>
+
+          {/* Action Buttons */}
           <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
+            className={`absolute top-3 left-3 rounded-full p-1.5 bg-white/95 backdrop-blur-sm border border-orange-200/50 shadow-sm hover:bg-white transition-all duration-200 ${inWishlist
+              ? "text-rose-500"
+              : "text-orange-400 hover:text-rose-400"
+              }`}
             onClick={(e) => {
               e.stopPropagation();
               onWishlistToggle(e, product);
             }}
-            className={`absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center shadow-sm backdrop-blur-sm transition-colors ${
-              inWishlist 
-                ? "bg-red-50 text-red-500" 
-                : "bg-white/80 text-gray-500 hover:text-orange-600"
-            }`}
+            aria-pressed={inWishlist}
+            aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
-            <Heart size={16} fill={inWishlist ? "currentColor" : "none"} />
+            <Heart size={14} fill={inWishlist ? "currentColor" : "none"} />
+          </motion.button>
+
+          <motion.button
+            className="absolute bottom-3 right-3 bg-white/95 backdrop-blur-sm shadow-sm border border-orange-200/50 rounded-full p-1.5 hover:bg-white transition-all duration-200 text-orange-500 hover:text-orange-600"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClick(product._id);
+            }}
+            aria-label="View product details"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Eye size={14} />
           </motion.button>
         </div>
 
-        {/* Content Section - Aligned to match reference */}
-        <div className="flex flex-col flex-1 px-1">
-          {/* Title - Bold and Dark */}
-          <h3 
-            className="text-[13px] md:text-[15px] font-bold text-gray-900 line-clamp-2 leading-snug mb-1.5"
-            style={{ fontFamily: "'Playfair Display', serif" }} // Or standard font if preferred
-          >
-            {product.Product_name}
-          </h3>
-          
-          {/* Rating - Orange Stars + Count */}
-          <div className="flex items-center gap-1 mb-3">
-             <div className="flex gap-0.5">
-              {Array.from({ length: 5 }).map((_, index) => (
-                <Star
-                  key={index}
-                  className="w-3 h-3 md:w-3.5 md:h-3.5"
-                  fill={ratingValue >= index + 1 ? "#F59E0B" : "transparent"} // Amber-500
-                  stroke={ratingValue >= index + 1 ? "#F59E0B" : "#D1D5DB"}
-                  strokeWidth={2}
-                />
-              ))}
-             </div>
-             <span className="text-[11px] text-gray-500 font-medium pt-0.5">
-               {hasReviewCount ? `(${product.Product_reviewCount})` : "(0)"}
-             </span>
-          </div>
+        {/* Product Info - Clean white design - Mobile Optimized */}
+        <div className="flex flex-col flex-1 p-2.5 sm:p-3 md:p-4 bg-white">
+          <div className="mb-1.5 md:mb-2 space-y-1 md:space-y-1.5 flex flex-col">
+            <h3
+              className="text-[11px] sm:text-xs md:text-sm font-semibold text-gray-900 line-clamp-2 leading-tight"
+              style={{ fontFamily: "'Playfair Display', serif" }}
+            >
+              {product.Product_name}
+            </h3>
+            <p
+              className="text-[10px] sm:text-[11px] md:text-xs text-gray-600 line-clamp-2 leading-relaxed hidden md:block"
+              title={description}
+            >
+              {description}
+            </p>
 
-          {/* Price Section - Matched to Reference (Black Badge) */}
-          <div className="mt-auto pt-1 flex items-center flex-wrap gap-x-2 gap-y-1">
-            <div className="flex items-baseline gap-1">
-              <span className="text-xs text-gray-500 font-medium">From</span>
-              <span className="text-base md:text-lg font-extrabold text-gray-900">
-                {currency(sellingPrice)}
+            <div className="flex items-center gap-1 min-h-[20px]">
+              <div className="flex items-center">
+                {Array.from({ length: 5 }).map((_, index) => {
+                  const active = ratingValue >= index + 1;
+                  return (
+                    <Star
+                      key={index}
+                      className="w-3 h-3"
+                      fill={active ? "#f97316" : "transparent"}
+                      stroke={active ? "#f97316" : "#e5e7eb"}
+                    />
+                  );
+                })}
+              </div>
+              <span className="text-[10px] text-gray-500 ml-1">
+                {hasReviewCount
+                  ? `(${product.Product_reviewCount!.toLocaleString()} reviews)`
+                  : "(0 reviews)"}
               </span>
             </div>
-            
-            {product.discounted_price && product.discounted_price !== sellingPrice && (
-              <span className="text-xs text-gray-400 line-through decoration-gray-400">
-                {currency(product.discounted_price)}
-              </span>
-            )}
-            
-            {/* The Black Pill Badge from Reference */}
-            {hasDiscount && discountPercentage > 0 && (
-              <span className="bg-black text-white text-[10px] md:text-[11px] font-bold px-1.5 py-0.5 rounded-[4px]">
-                {discountPercentage}% OFF
-              </span>
-            )}
+          </div>
+
+          <div className="space-y-1.5 md:space-y-2.5">
+            {/* Price Section with Discount - Mobile Optimized */}
+            <div className="space-y-1">
+              {/* Selling Price (Main Price) */}
+              <div className="flex items-baseline gap-1.5 flex-wrap">
+                <span className="text-[11px] md:text-xs text-gray-600 font-medium">
+                  From
+                </span>
+                <span className="text-sm sm:text-base md:text-lg font-bold text-gray-900">
+                  {currency(sellingPrice)}
+                </span>
+
+                {/* MRP with strikethrough - Show if discounted_price exists and is different */}
+                {product.discounted_price && product.discounted_price !== sellingPrice && (
+                  <span className="text-[11px] sm:text-xs md:text-sm text-gray-400 line-through">
+                    {currency(product.discounted_price)}
+                  </span>
+                )}
+
+                {hasDiscount && discountPercentage > 0 && (
+                  <span className="ml-auto text-[10px] md:text-xs font-semibold text-white bg-gray-900 px-2 py-0.5 rounded-sm">
+                    {discountPercentage}% OFF
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </motion.div>
@@ -242,14 +323,16 @@ const FeaturedProducts: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Phone verification and payment processing hooks
   const phoneVerification = usePhoneVerification();
   const { processPayment } = usePaymentProcessing();
 
   const initialLimit = 10;
   const loadMoreCount = 10;
 
+  // Helper to get selling price (Product_price is always the selling price)
   const getCurrentPrice = (p: ApiProduct) => {
-    return p.Product_price; 
+    return p.Product_price; // Product_price is the selling price
   };
 
   const calculateAverageRating = (reviews: { rating: number }[]) => {
@@ -307,10 +390,21 @@ const FeaturedProducts: React.FC = () => {
                   : 0,
               };
             } catch (err) {
+              console.error(
+                "Failed to load reviews for product",
+                product._id,
+                err
+              );
               return {
                 ...product,
-                Product_rating: product.Product_rating || 0,
-                Product_reviewCount: product.Product_reviewCount || 0,
+                Product_rating:
+                  typeof product.Product_rating === "number"
+                    ? product.Product_rating
+                    : 0,
+                Product_reviewCount:
+                  typeof product.Product_reviewCount === "number"
+                    ? product.Product_reviewCount
+                    : 0,
               };
             }
           })
@@ -326,7 +420,7 @@ const FeaturedProducts: React.FC = () => {
       } catch (err) {
         toast({
           title: "Divine Error",
-          description: "Failed to load sacred products.",
+          description: "Failed to load sacred products. Please try again.",
           variant: "destructive",
         });
       } finally {
@@ -344,6 +438,7 @@ const FeaturedProducts: React.FC = () => {
     fetchProducts(initialLimit, 0, false, selectedCategory);
   }, [fetchProducts, selectedCategory]);
 
+  // Handle phone verification for direct buy
   useEffect(() => {
     if (phoneVerification.phoneVerified && directBuyProduct) {
       handleDirectBuyPayment(directBuyProduct);
@@ -358,25 +453,11 @@ const FeaturedProducts: React.FC = () => {
     (e: React.MouseEvent, product: ApiProduct) => {
       e.stopPropagation();
       if (!user) return navigate("/login");
-
-      // Normalize product shape to match WishlistContext expectations
-      const wishlistProduct = {
-        _id: product._id,
-        Product_name: product.Product_name,
-        Product_price: product.Product_price,
-        Product_image: product.Product_image,
-        isNew: product.isNew,
-        category: product.Product_category?.category,
-        description:
-          product.Product_description || product.Product_discription,
-        Product_available: product.Product_available,
-        Product_category: product.Product_category,
-      };
-
-      const wasInWishlist = isInWishlist(product._id);
-      toggleWishlist(wishlistProduct);
+      toggleWishlist(product);
       toast({
-        title: wasInWishlist ? "Removed from collection" : "Added to collection",
+        title: isInWishlist(product._id)
+          ? "Removed from sacred collection"
+          : "Added to sacred collection",
         description: product.Product_name,
         duration: 1400,
       });
@@ -388,6 +469,7 @@ const FeaturedProducts: React.FC = () => {
     (product: ApiProduct) => {
       if (!user) return navigate("/login");
 
+      // Determine current price safely
       const currentPrice = getCurrentPrice(product);
       const originalPrice = product.Product_price;
 
@@ -395,15 +477,15 @@ const FeaturedProducts: React.FC = () => {
         id: parseInt(product._id.slice(-8), 16),
         _id: product._id,
         name: product.Product_name,
-        price: currency(currentPrice),
-        originalPrice: currency(originalPrice),
+        price: currency(currentPrice), // Current price (discounted_price if available)
+        originalPrice: currency(originalPrice), // Original price (Product_price)
         image: product.Product_image[0] || "",
         isNew: product.isNew || false,
         quantity: 1,
       });
       toast({
-        title: "Added to cart",
-        description: product.Product_name,
+        title: "Added to divine cart",
+        description: `${product.Product_name} - Blessed with positive energy`,
         duration: 1600,
       });
     },
@@ -413,10 +495,15 @@ const FeaturedProducts: React.FC = () => {
   const handleDirectBuy = useCallback(
     (product: ApiProduct) => {
       if (!user) {
-        toast({ title: "Please login", variant: "destructive" });
+        toast({
+          title: "Please login",
+          description: "You need to be logged in to buy directly",
+          variant: "destructive",
+        });
         navigate("/login");
         return;
       }
+
       setDirectBuyProduct(product);
       phoneVerification.setShowPhoneVerification(true);
     },
@@ -424,15 +511,24 @@ const FeaturedProducts: React.FC = () => {
   );
 
   const handleDirectBuyPayment = async (product: ApiProduct) => {
-    if (!phoneVerification.phoneVerified) return;
+    if (!phoneVerification.phoneVerified) {
+      toast({
+        title: "Phone Not Verified",
+        description: "Please verify your phone number first",
+        variant: "destructive",
+      });
+      return;
+    }
 
+    // Determine current price safely for payment
     const currentPrice = getCurrentPrice(product);
+
     const orderItems = [
       {
         productId: product._id,
         quantity: 1,
-        price: currentPrice,
-        originalPrice: product.Product_price,
+        price: currentPrice, // Use the current price (discounted_price if available)
+        originalPrice: product.Product_price, // Include original price
         name: product.Product_name,
         image: product.Product_image[0] || "",
       },
@@ -450,7 +546,7 @@ const FeaturedProducts: React.FC = () => {
     const success = await processPayment(
       orderItems,
       shippingAddress,
-      "online",
+      "online", // Default to online payment for direct buy
       {
         itemsTotal: currentPrice,
         deliveryCharge: 0,
@@ -464,7 +560,7 @@ const FeaturedProducts: React.FC = () => {
       phoneVerification.resetPhoneVerification();
       toast({
         title: "Order Placed Successfully!",
-        description: product.Product_name,
+        description: `${product.Product_name} - Your divine item is on its way`,
         duration: 2000,
       });
     }
@@ -480,7 +576,8 @@ const FeaturedProducts: React.FC = () => {
   return (
     <>
       <section className="relative pt-12 pb-8 md:pt-20 md:pb-12 bg-white">
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="relative max-w-7xl mx-auto px-2 sm:px-4">
+          {/* Header Section */}
           <motion.header
             className="mb-10 text-center max-w-4xl mx-auto"
             initial={{ opacity: 0, y: 20 }}
@@ -502,35 +599,46 @@ const FeaturedProducts: React.FC = () => {
                 Products
               </span>
             </h2>
-            <p className="text-sm md:text-base text-gray-600 max-w-2xl mx-auto">
-              Discover blessed malas, sacred murtis, and spiritual artifacts.
+            <p className="text-sm md:text-base text-gray-600 max-w-2xl mx-auto leading-relaxed px-4">
+              Discover blessed malas, sacred murtis, and spiritual artifacts
+              filled with divine energy
             </p>
+            {totalProducts > 0 && (
+              <p className="mt-2 text-gray-500 font-medium text-xs md:text-sm">
+                Showing {products.length}
+                {totalProducts > products.length
+                  ? ` of ${totalProducts}`
+                  : ""}{" "}
+                blessed items
+              </p>
+            )}
           </motion.header>
 
-          <div className="flex gap-2 mb-8 overflow-x-auto pb-2 scrollbar-hide justify-start md:justify-center">
+          {/* Category Filters - Clean white design */}
+          <div className="flex gap-2 mb-10 px-2 overflow-scroll">
             <Button
               size="sm"
               variant={selectedCategory === "" ? "default" : "outline"}
               onClick={() => setSelectedCategory("")}
-              className="rounded-full whitespace-nowrap px-4 bg-orange-600 hover:bg-orange-700 text-white border-0"
+              className="rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-200 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white border-0 shadow-sm"
             >
               All Items
             </Button>
-            {categories.slice(0, 5).map((cat) => (
+            {categories.slice(0, 4).map((cat) => (
               <Button
                 key={cat._id}
                 size="sm"
                 variant={selectedCategory === cat.slug ? "default" : "outline"}
                 onClick={() => setSelectedCategory(cat.slug || "")}
-                className={`rounded-full whitespace-nowrap px-4 ${selectedCategory === cat.slug ? 'bg-orange-600 text-white' : 'border-gray-200 text-gray-600 hover:border-orange-300 hover:text-orange-700'}`}
+                className="rounded-full px-2.5 py-1.5 text-xs font-medium transition-all duration-200 border border-gray-200 text-gray-700 hover:bg-orange-50 hover:border-orange-200 hover:text-orange-700"
               >
                 {cat.name}
               </Button>
             ))}
           </div>
 
-          {/* Grid Layout - Same as previous fix, aligned properly for mobile */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-6 mb-10 items-stretch">
+          {/* Products Grid - Responsive columns */}
+          <div className="grid auto-rows-fr grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4 lg:gap-5 mb-8 md:mb-10">
             {products.map((product) => (
               <ProductCard
                 key={product._id}
@@ -544,22 +652,36 @@ const FeaturedProducts: React.FC = () => {
             ))}
           </div>
 
+          {/* Load More Button */}
           {hasMore && (
-            <div className="flex justify-center">
+            <div className="flex justify-center px-4">
               <Button
                 variant="outline"
                 size="lg"
                 onClick={handleLoadMore}
                 disabled={loadingMore}
-                className="rounded-full px-8 py-6 border-orange-200 text-orange-700 hover:bg-orange-50 hover:text-orange-800"
+                className="border border-gray-300 text-gray-700 px-6 md:px-10 py-3 md:py-4 rounded-full font-medium hover:bg-orange-50 hover:border-orange-200 hover:text-orange-700 transition-all duration-200 text-sm md:text-base shadow-sm hover:shadow w-full md:w-auto"
               >
-                {loadingMore ? "Loading Blessings..." : "Load More"}
+                {loadingMore ? (
+                  <div className="flex items-center gap-2 md:gap-2">
+                    <div className="w-4 h-4 md:w-5 md:h-5 border-2 border-orange-400 border-t-transparent rounded-full animate-spin"></div>
+                    <span className="text-xs md:text-sm">Loading...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <Sparkles className="w-3 h-3 md:w-4 md:h-4" />
+                    <span className="text-xs md:text-sm">
+                      Load More Blessings
+                    </span>
+                  </div>
+                )}
               </Button>
             </div>
           )}
         </div>
       </section>
 
+      {/* Phone Verification Modal for Direct Buy */}
       <PhoneVerificationModal
         showPhoneVerification={phoneVerification.showPhoneVerification}
         phoneNumber={phoneVerification.phoneNumber}

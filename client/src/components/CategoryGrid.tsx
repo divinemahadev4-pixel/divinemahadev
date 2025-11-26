@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ShoppingCart, Sparkles } from "lucide-react";
+import { Sparkles, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,8 @@ const CategoryGridModern: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Scroll Logic
   const scrollRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
   const startX = useRef(0);
@@ -41,7 +43,7 @@ const CategoryGridModern: React.FC = () => {
     })();
   }, []);
 
-  // Mouse drag handlers for horizontal scroll
+  // Mouse drag handlers
   const onMouseDown = (e: React.MouseEvent) => {
     if (scrollRef.current) {
       isDragging.current = true;
@@ -69,23 +71,17 @@ const CategoryGridModern: React.FC = () => {
     if (!isDragging.current || !scrollRef.current) return;
     e.preventDefault();
     const x = e.pageX - scrollRef.current.offsetLeft;
-    const walk = (x - startX.current) * 2; // scroll-fast
+    const walk = (x - startX.current) * 2; 
     scrollRef.current.scrollLeft = scrollLeft.current - walk;
   };
 
   if (loading) {
     return (
-      <section className="py-12 bg-gradient-to-br from-orange-50 to-amber-50/30 text-center">
-        <h3 className="mb-6 text-2xl font-extrabold text-orange-700">Loading Divine Collections...</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-6 max-w-7xl mx-auto px-4">
-          {Array(8)
-            .fill(0)
-            .map((_, i) => (
-              <div key={i} className="flex flex-col items-center space-y-3">
-                <Skeleton className="w-24 h-24 rounded-xl bg-orange-100 animate-pulse" />
-                <Skeleton className="w-20 h-3 rounded-full bg-orange-200" />
-              </div>
-            ))}
+      <section className="py-16 bg-gradient-to-b from-orange-50/50 to-white">
+        <div className="flex justify-center space-x-4 max-w-7xl mx-auto px-4 overflow-hidden">
+          {Array(5).fill(0).map((_, i) => (
+            <Skeleton key={i} className="w-56 h-72 rounded-2xl bg-orange-100/50" />
+          ))}
         </div>
       </section>
     );
@@ -93,15 +89,12 @@ const CategoryGridModern: React.FC = () => {
 
   if (error) {
     return (
-      <section className="py-16 bg-gradient-to-br from-orange-50 to-amber-50 flex flex-col items-center justify-center min-h-[200px]">
-        <div className="max-w-md text-center bg-white shadow-lg rounded-2xl p-6 border border-orange-200">
+      <section className="py-16 flex flex-col items-center justify-center bg-orange-50/30">
+        <div className="text-center p-8 bg-white/80 backdrop-blur-sm rounded-2xl border border-orange-100 shadow-lg">
           <Sparkles className="w-10 h-10 text-orange-500 mx-auto mb-3" />
-          <p className="text-base font-semibold mb-3 text-orange-700">{error}</p>
-          <Button
-            onClick={() => window.location.reload()}
-            className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white px-5 py-2 rounded-xl font-medium text-sm"
-          >
-            Try Again
+          <p className="text-orange-800 font-medium mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()} variant="outline" className="border-orange-300 text-orange-700 hover:bg-orange-50">
+            Refresh
           </Button>
         </div>
       </section>
@@ -109,110 +102,105 @@ const CategoryGridModern: React.FC = () => {
   }
 
   return (
-    <section className="relative pt-16 pb-8  bg-gradient-to-br from-white via-orange-50 to-amber-50/30">
-      <div className="relative max-w-7xl mx-auto px-4">
-        {/* Header - Right Aligned and Smaller */}
-        <motion.header
-          className="mb-6 text-left max-w-2xl "
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <h2 className="text-2xl md:text-3xl font-bold text-orange-900" style={{ fontFamily: "'Playfair Display', serif" }}>
-            Divine <span className="bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">Collection</span>
-          </h2>
-        </motion.header>
+    <section className="relative py-12 md:py-16 bg-[#FFFBF7]">
+      {/* Background Decorative Elements */}
+      <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-orange-100/40 to-transparent pointer-events-none" />
+      
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6">
+        
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-8 md:mb-10">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <span className="text-orange-600 font-bold tracking-wider text-xs uppercase mb-2 block">Sacred Offerings</span>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 font-serif">
+              Divine <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-amber-600">Collection</span>
+            </h2>
+          </motion.div>
+          
+          {/* Subtle scroll hint */}
+          <div className="hidden md:flex items-center gap-2 text-orange-400 text-sm font-medium">
+            <span>Scroll to explore</span>
+            <ArrowRight className="w-4 h-4" />
+          </div>
+        </div>
 
-        {/* Horizontal scroll drag container - Very tight spacing */}
+        {/* Categories Scroll Container */}
         <div
           ref={scrollRef}
-          className="flex space-x-1 md:space-x-2 overflow-x-auto overflow-y-hidden snap-x snap-mandatory scroll-pl-4 pb-4 cursor-grab"
+          className="flex gap-4 md:gap-6 overflow-x-auto overflow-y-hidden snap-x snap-mandatory pb-12 pt-2 px-1 scrollbar-hide cursor-grab active:cursor-grabbing"
           onMouseDown={onMouseDown}
           onMouseLeave={onMouseLeave}
           onMouseUp={onMouseUp}
           onMouseMove={onMouseMove}
-          style={{ scrollbarWidth: "none" }}
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
-          {categories.map((category) => (
+          {categories.map((category, index) => (
             <motion.div
               key={category._id}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              whileHover={{ y: -4, scale: 1.02 }}
-              transition={{ duration: 0.4 }}
-              className="flex flex-col items-center cursor-pointer flex-shrink-0 w-44 md:w-48 snap-center group"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              className="relative flex-shrink-0 snap-center group"
               onClick={() => navigate(`/category/${category.slug}`)}
             >
-              {/* Square Card Container - Changed from rounded-full to rounded-xl */}
-              <div className="relative rounded-xl overflow-hidden bg-gradient-to-br from-white to-orange-50/70 shadow-md border-2 border-orange-200/50 group-hover:border-orange-300 transition-all duration-400 w-36 h-36 md:w-40 md:h-40 mb-3.5">
-                <div className="absolute inset-0 rounded-xl overflow-hidden">
+              {/* --- NEW CARD DESIGN --- */}
+              <div className="w-56 h-80 md:w-64 md:h-96 relative rounded-[2rem] overflow-hidden bg-white shadow-md hover:shadow-2xl transition-all duration-500 ease-out transform hover:-translate-y-2">
+                
+                {/* Image */}
+                <div className="absolute inset-0">
                   <img
                     src={category.image || "/fallback.jpg"}
                     alt={category.name}
-                    className="object-cover w-full h-full transition-transform duration-600 ease-out group-hover:scale-110"
+                    className="w-full h-full object-cover transition-transform duration-700 ease-in-out group-hover:scale-110"
                     loading="lazy"
                   />
-                  {/* Spiritual Gradient Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-orange-50/20 to-orange-100/40 rounded-xl" />
-                  
-                  {/* Sacred Symbol Overlay - Smaller */}
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-400">
-                    <div className="w-12 h-12 bg-orange-500/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                      <ShoppingCart className="w-4 h-4 text-orange-700" />
-                    </div>
-                  </div>
+                  {/* Dark Gradient Overlay for Text Readability */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-orange-950/90 via-orange-900/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-300" />
                 </div>
 
-                {/* Product Count Badge - Smaller */}
+                {/* Inner Border / Frame (Divine Feel) */}
+                <div className="absolute inset-3 border border-white/20 rounded-[1.5rem] pointer-events-none transition-colors duration-300 group-hover:border-orange-200/60" />
+
+                {/* Top Badge */}
                 {category.productCount !== undefined && (
-                  <Badge className="absolute top-2 right-2 bg-orange-600 text-white font-semibold px-1.5 py-0.5 rounded-lg text-xs shadow-md">
-                    {category.productCount}
+                  <Badge className="absolute top-5 right-5 bg-white/20 backdrop-blur-md text-white border-0 hover:bg-white/30 transition-colors shadow-sm">
+                    {category.productCount} Items
                   </Badge>
                 )}
-              </div>
 
-              {/* Category Name Below Card - Slightly larger */}
-              <div className="text-center space-y-1.5">
-                <h3 className="text-[0.9rem] md:text-base font-semibold text-orange-900 group-hover:text-orange-700 transition-colors duration-300 leading-tight">
-                  {category.name}
-                </h3>
-                <Button 
-                  className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white px-5 py-1.5 rounded-lg text-xs md:text-sm font-medium shadow-sm hover:shadow transition-all duration-300"
-                  size="sm"
-                >
-                  Explore
-                </Button>
+                {/* Bottom Content */}
+                <div className="absolute bottom-0 left-0 w-full p-6 text-center z-10">
+                  {/* Decorative line */}
+                  <div className="w-8 h-0.5 bg-orange-400 mx-auto mb-3 transition-all duration-300 group-hover:w-16" />
+                  
+                  <h3 className="text-xl md:text-2xl font-bold text-white mb-1 font-serif tracking-wide drop-shadow-md">
+                    {category.name}
+                  </h3>
+                  
+                  {/* Hidden description/button reveals on hover */}
+                  <div className="h-0 overflow-hidden group-hover:h-8 transition-all duration-300 opacity-0 group-hover:opacity-100 flex items-center justify-center mt-2">
+                    <span className="text-orange-200 text-sm font-medium tracking-wider uppercase flex items-center gap-1">
+                      Shop Now <ArrowRight className="w-3 h-3" />
+                    </span>
+                  </div>
+                </div>
               </div>
             </motion.div>
           ))}
         </div>
-
-        {/* Scroll Indicator - Slightly closer */}
-        <div className="flex justify-center mt-4">
-          <div className="flex space-x-1.5">
-            {categories.slice(0, 4).map((_, index) => (
-              <div
-                key={index}
-                className="w-1.5 h-1.5 rounded-full bg-orange-300 opacity-50 transition-opacity duration-300"
-              />
-            ))}
-          </div>
-        </div>
       </div>
 
       <style>{`
-        .dragging {
-          cursor: grabbing;
-          scroll-behavior: auto;
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
         }
-        /* Hide scrollbar for Chrome, Safari and Opera */
-        .overflow-x-auto::-webkit-scrollbar {
-          display: none;
-        }
-        /* Hide scrollbar for IE, Edge and Firefox */
-        .overflow-x-auto {
-          -ms-overflow-style: none;  /* IE and Edge */
-          scrollbar-width: none;  /* Firefox */
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
       `}</style>
     </section>
