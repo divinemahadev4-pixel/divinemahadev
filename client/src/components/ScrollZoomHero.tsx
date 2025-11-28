@@ -2,123 +2,108 @@ import React, { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-// Scroll-zoom hero image section, adapted from your GSAP HTML demo
-// Place this between sections like Divine Collection and Divine Products.
-
 gsap.registerPlugin(ScrollTrigger);
 
 interface ScrollZoomHeroProps {
   imageSrc: string;
+  mobileImageSrc?: string;
   alt?: string;
   caption?: string;
 }
 
+// CONFIGURATION:
+// scaleFrom: 1.4 = Starts "Zoomed Up" (Big/Cropped)
+// scaleTo: 1.0   = Ends at "Original Image Full Width" (Fits screen)
 const desktopConfig = {
-  scaleFrom: 1,
-  scaleTo: 1.18,
-  yFrom: 0,
-  yTo: -70,
+  scaleFrom: 1.4, 
+  scaleTo: 1,     
 };
 
 const mobileConfig = {
-  scaleFrom: 1,
-  scaleTo: 1.08,
-  yFrom: 0,
-  yTo: -40,
+  scaleFrom: 1.25, 
+  scaleTo: 1,     
 };
 
-const ScrollZoomHero: React.FC<ScrollZoomHeroProps> = ({ imageSrc, alt, caption }) => {
-  const stageRef = useRef<HTMLDivElement | null>(null);
-  const imgRef = useRef<HTMLImageElement | null>(null);
+const ScrollZoomHero: React.FC<ScrollZoomHeroProps> = ({ imageSrc, mobileImageSrc, alt, caption }) => {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const desktopImgRef = useRef<HTMLImageElement | null>(null);
+  const mobileImgRef = useRef<HTMLImageElement | null>(null);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || !containerRef.current) return;
 
-    const stageEl = stageRef.current;
-    const imgEl = imgRef.current;
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReducedMotion) return;
 
-    if (!stageEl || !imgEl) return;
+    const ctx = gsap.context(() => {
+      const mm = gsap.matchMedia();
 
-    // Respect users who prefer reduced motion: no scroll animation, just show the image.
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (reduceMotion.matches) {
-      gsap.set(imgEl, { clearProps: "all" });
-      return;
-    }
-
-    const mm = gsap.matchMedia();
-    let onLoad: (() => void) | null = null;
-
-    const initAnimation = (values: typeof desktopConfig) => {
-      // Only animate transform properties to avoid layout reflow.
-      gsap.set(imgEl, {
-        scale: values.scaleFrom,
-        y: values.yFrom,
-        transformOrigin: "50% 50%",
-      });
-
-      return gsap.to(imgEl, {
-        scale: values.scaleTo,
-        y: values.yTo,
-        ease: "power2.out",
-        scrollTrigger: {
-          trigger: stageEl,
-          start: "top bottom", // when top of hero hits bottom of viewport
-          end: "center top",    // until center of hero reaches top of viewport
-          scrub: 0.6,            // smooth, scroll-linked motion
-          invalidateOnRefresh: true,
-        },
-      });
-    };
-
-    const setupAnimations = () => {
-      mm.add("(min-width: 769px)", () => {
-        const tween = initAnimation(desktopConfig);
-        return () => tween.kill();
-      });
-
-      mm.add("(max-width: 768px)", () => {
-        const tween = initAnimation(mobileConfig);
-        return () => tween.kill();
-      });
-    };
-
-    // Wait for the image to be loaded to prevent any jump when ScrollTrigger calculates.
-    if (imgEl.complete && imgEl.naturalWidth > 0) {
-      setupAnimations();
-    } else {
-      onLoad = () => {
-        setupAnimations();
-        imgEl.removeEventListener("load", onLoad as () => void);
+      const createZoomOutTween = (config: typeof desktopConfig, target: HTMLImageElement | null) => {
+        if (!target) return;
+        // 1. Initial State: Set image to be BIG (Zoomed Up)
+        gsap.set(target, {
+          scale: config.scaleFrom,
+          transformOrigin: "center center",
+        });
+        
+        // 2. Animation: Shrink down to Original Full Width (same behavior as your snippet)
+        gsap.to(target, {
+          scale: config.scaleTo, // Goes to 1 (Normal size)
+          duration: 2,           // Takes 2 seconds to settle
+          ease: "power2.out",    // Starts fast, slows down gently
+          scrollTrigger: {
+            trigger: containerRef.current,
+            // START: When the top of the image hits 80% down the viewport.
+            // This ensures it starts animating AS SOON AS you scroll to it.
+            start: "top 80%",
+            toggleActions: "play none none reverse",
+          },
+        });
       };
-      imgEl.addEventListener("load", onLoad);
-    }
 
-    return () => {
-      mm.revert();
-      if (onLoad) {
-        imgEl.removeEventListener("load", onLoad);
-      }
-    };
+      // Desktop
+      mm.add("(min-width: 769px)", () => {
+        createZoomOutTween(desktopConfig, desktopImgRef.current);
+      });
+
+      // Mobile
+      mm.add("(max-width: 768px)", () => {
+        createZoomOutTween(mobileConfig, mobileImgRef.current ?? desktopImgRef.current);
+      });
+    }, containerRef);
+
+    return () => ctx.revert();
   }, [imageSrc]);
 
   return (
     <section
-      ref={stageRef}
-      className="relative my-0 h-screen w-full overflow-hidden"
+      ref={containerRef}
+      className="relative w-full h-screen overflow-hidden md:bg-black"
     >
       <div className="relative w-full h-full">
+        {/* Desktop image */}
         <img
-          ref={imgRef}
+          ref={desktopImgRef}
           src={imageSrc}
-          alt={alt || "Spiritual hero"}
-          loading="lazy"
-          className="absolute inset-0 w-full h-full object-cover will-change-transform select-none pointer-events-none"
+          alt={alt || "Hero image"}
+          loading="eager"
+          className="hidden md:block absolute inset-0 w-full h-full object-cover will-change-transform"
+        />
+
+        {/* Mobile image (falls back to desktop image if mobileImageSrc is not provided) */}
+        <img
+          ref={mobileImgRef}
+          src={mobileImageSrc || imageSrc}
+          alt={alt || "Hero image"}
+          loading="eager"
+          className="block md:hidden absolute inset-0 w-full h-full object-cover will-change-transform"
         />
 
         {caption && (
-          <div className="absolute left-4 bottom-4 md:left-6 md:bottom-6 text-xs md:text-sm text-white/90 bg-black/40 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/10">
-            {caption}
+          <div className="absolute left-4 bottom-4 md:left-6 md:bottom-6 z-10 max-w-[80%]">
+            <div className="text-xs md:text-sm text-white/90 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 inline-block">
+              {caption}
+            </div>
           </div>
         )}
       </div>
