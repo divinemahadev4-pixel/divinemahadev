@@ -11,17 +11,14 @@ interface ScrollZoomHeroProps {
   caption?: string;
 }
 
-// CONFIGURATION:
-// scaleFrom: 1.4 = Starts "Zoomed Up" (Big/Cropped)
-// scaleTo: 1.0   = Ends at "Original Image Full Width" (Fits screen)
 const desktopConfig = {
-  scaleFrom: 1.4, 
-  scaleTo: 1,     
+  scaleFrom: 1.3, // Starts slightly zoomed in
+  scaleTo: 1,     // Ends at 100% (Full image visible)
 };
 
 const mobileConfig = {
-  scaleFrom: 1.25, 
-  scaleTo: 1,     
+  scaleFrom: 1.08, // Much gentler zoom for mobile so poster is not visibly cut
+  scaleTo: 1,      // Ends at 100% (Full image visible)
 };
 
 const ScrollZoomHero: React.FC<ScrollZoomHeroProps> = ({ imageSrc, mobileImageSrc, alt, caption }) => {
@@ -39,34 +36,34 @@ const ScrollZoomHero: React.FC<ScrollZoomHeroProps> = ({ imageSrc, mobileImageSr
       const mm = gsap.matchMedia();
 
       const createZoomOutTween = (config: typeof desktopConfig, target: HTMLImageElement | null) => {
-        if (!target) return;
-        // 1. Initial State: Set image to be BIG (Zoomed Up)
-        gsap.set(target, {
-          scale: config.scaleFrom,
-          transformOrigin: "center center",
-        });
-        
-        // 2. Animation: Shrink down to Original Full Width (same behavior as your snippet)
-        gsap.to(target, {
-          scale: config.scaleTo, // Goes to 1 (Normal size)
-          duration: 2,           // Takes 2 seconds to settle
-          ease: "power2.out",    // Starts fast, slows down gently
-          scrollTrigger: {
-            trigger: containerRef.current,
-            // START: When the top of the image hits 80% down the viewport.
-            // This ensures it starts animating AS SOON AS you scroll to it.
-            start: "top 80%",
-            toggleActions: "play none none reverse",
+        if (!target || !containerRef.current) return;
+
+        // Play-once zoom that always finishes at scale 1 (original image size).
+        gsap.fromTo(
+          target,
+          {
+            scale: config.scaleFrom,
+            transformOrigin: "center center",
           },
-        });
+          {
+            scale: config.scaleTo,
+            duration: 1.6,
+            ease: "power2.out",
+            scrollTrigger: {
+              trigger: containerRef.current,
+              start: "top 80%", // start when the hero is nicely in view
+              toggleActions: "play none none reverse", // ensure it completes to scale 1
+            },
+          }
+        );
       };
 
-      // Desktop
+      // Desktop Setup
       mm.add("(min-width: 769px)", () => {
         createZoomOutTween(desktopConfig, desktopImgRef.current);
       });
 
-      // Mobile
+      // Mobile Setup
       mm.add("(max-width: 768px)", () => {
         createZoomOutTween(mobileConfig, mobileImgRef.current ?? desktopImgRef.current);
       });
@@ -78,7 +75,8 @@ const ScrollZoomHero: React.FC<ScrollZoomHeroProps> = ({ imageSrc, mobileImageSr
   return (
     <section
       ref={containerRef}
-      className="relative w-full h-screen overflow-hidden md:bg-black"
+      // Added 'flex items-center justify-center' to ensure image stays perfectly centered
+      className="relative w-full h-screen overflow-hidden flex items-center justify-center"
     >
       <div className="relative w-full h-full">
         {/* Desktop image */}
@@ -87,21 +85,25 @@ const ScrollZoomHero: React.FC<ScrollZoomHeroProps> = ({ imageSrc, mobileImageSr
           src={imageSrc}
           alt={alt || "Hero image"}
           loading="eager"
-          className="hidden md:block absolute inset-0 w-full h-full object-cover will-change-transform"
+          // FIX: Changed 'object-cover' to 'object-contain'
+          // This guarantees the image is NEVER cropped, so text is always safe.
+          className="hidden md:block absolute inset-0 w-full h-full object-contain will-change-transform"
         />
 
-        {/* Mobile image (falls back to desktop image if mobileImageSrc is not provided) */}
+        {/* Mobile image */}
         <img
           ref={mobileImgRef}
           src={mobileImageSrc || imageSrc}
           alt={alt || "Hero image"}
           loading="eager"
-          className="block md:hidden absolute inset-0 w-full h-full object-cover will-change-transform"
+          // FIX: Changed 'object-cover' to 'object-contain'
+          // This ensures the full mobile poster is seen, even on tall phones.
+          className="block md:hidden absolute inset-0 w-full h-full object-contain will-change-transform"
         />
 
         {caption && (
           <div className="absolute left-4 bottom-4 md:left-6 md:bottom-6 z-10 max-w-[80%]">
-            <div className="text-xs md:text-sm text-white/90 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 inline-block">
+            <div className="text-xs md:text-sm text-white/90 inline-block">
               {caption}
             </div>
           </div>
