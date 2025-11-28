@@ -102,7 +102,7 @@ const CategoryGridModern: React.FC = () => {
   }
 
   return (
-    <section className="relative py-12 md:py-16 bg-[#FFFBF7]">
+    <section className="relative pt-12 md:pt-16 pb-0 md:pb-0 bg-[#FFFBF7]">
       {/* Background Decorative Elements */}
       <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-orange-100/40 to-transparent pointer-events-none" />
       
@@ -131,7 +131,7 @@ const CategoryGridModern: React.FC = () => {
         {/* Categories Scroll Container */}
         <div
           ref={scrollRef}
-          className="flex gap-4 md:gap-6 overflow-x-auto overflow-y-hidden snap-x snap-mandatory pb-12 pt-2 px-1 scrollbar-hide cursor-grab active:cursor-grabbing"
+          className="flex gap-4 md:gap-6 overflow-x-auto overflow-y-hidden snap-x snap-mandatory pb-0 pt-2 px-1 scrollbar-hide cursor-grab active:cursor-grabbing"
           onMouseDown={onMouseDown}
           onMouseLeave={onMouseLeave}
           onMouseUp={onMouseUp}

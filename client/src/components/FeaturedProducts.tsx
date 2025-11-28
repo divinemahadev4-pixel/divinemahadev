@@ -479,7 +479,7 @@ const FeaturedProducts: React.FC = () => {
 
   return (
     <>
-      <section className="relative pt-12 pb-8 md:pt-20 md:pb-12 bg-white">
+      <section className="relative pt-12 md:pt-20 pb-0 md:pb-0 bg-white">
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6">
           <motion.header
             className="mb-10 text-center max-w-4xl mx-auto"
@@ -530,7 +530,7 @@ const FeaturedProducts: React.FC = () => {
           </div>
 
           {/* Grid Layout - Same as previous fix, aligned properly for mobile */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-6 mb-10 items-stretch">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-6 mb-0 items-stretch">
             {products.map((product) => (
               <ProductCard
                 key={product._id}
