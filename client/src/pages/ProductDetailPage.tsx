@@ -94,6 +94,10 @@ const ProductDetailPage: React.FC = () => {
     pinCode: "",
     phone: "",
   });
+  const [couponCode, setCouponCode] = useState("");
+  const [couponApplied, setCouponApplied] = useState(false);
+  const [couponDiscount, setCouponDiscount] = useState<number>(0);
+  const [directCheckoutLoading, setDirectCheckoutLoading] = useState(false);
 
   // Reviews state
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -316,6 +320,37 @@ const ProductDetailPage: React.FC = () => {
     }));
   };
 
+  const handleApplyCoupon = () => {
+    if (!couponCode.trim()) {
+      toast({
+        title: "Enter coupon code",
+        description: "Please enter a coupon code to apply",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const baseDiscount = 50; // flat ₹50 coupon discount
+    const discount = Math.min(baseDiscount, lineTotal);
+
+    if (discount <= 0) {
+      toast({
+        title: "Coupon not applicable",
+        description: "Order amount is too low for this coupon.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCouponDiscount(discount);
+    setCouponApplied(true);
+    toast({
+      title: "Coupon applied",
+      description: `You will save ₹${discount.toLocaleString()} on this order`,
+      duration: 2500,
+    });
+  };
+
   const handleDirectBuy = () => {
     if (!product) return;
 
@@ -323,7 +358,7 @@ const ProductDetailPage: React.FC = () => {
       toast({
         title: "Please login",
         description: "You need to be logged in to buy directly",
-        variant: "destructive"
+        variant: "destructive",
       });
       navigate("/login");
       return;
@@ -336,14 +371,14 @@ const ProductDetailPage: React.FC = () => {
   };
 
   const handleDirectBuyPayment = async (
-    product: Product,
+    buyProduct: Product,
     paymentMethod: "cod" | "online"
   ) => {
     if (!phoneVerification.phoneVerified) {
       toast({
         title: "Phone Not Verified",
         description: "Please verify your phone number first",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -379,22 +414,26 @@ const ProductDetailPage: React.FC = () => {
       }
     }
 
-    // FIXED: Use Product_price as selling price for payment
-    const sellingPriceForPayment = product.Product_price;
+    // Base totals with discounts
+    const sellingPriceForPayment = buyProduct.Product_price;
+    const baseItemsTotal = sellingPriceForPayment * quantity;
+    const codTotal = codPayableTotal;
+    const onlineTotal = onlinePayableTotal;
 
     const orderItems = [
       {
-        productId: product._id,
+        productId: buyProduct._id,
         quantity: quantity,
-        price: sellingPriceForPayment, // Selling price
-        name: product.Product_name,
-        image: product.Product_image[0] || "",
+        price: sellingPriceForPayment,
+        name: buyProduct.Product_name,
+        image: buyProduct.Product_image[0] || "",
       },
     ];
 
-    // Dedicated COD flow: create order and navigate explicitly
+    // Dedicated COD flow
     if (paymentMethod === "cod") {
       try {
+        setDirectCheckoutLoading(true);
         const orderData = {
           userId: user?._id,
           items: orderItems,
@@ -405,9 +444,9 @@ const ProductDetailPage: React.FC = () => {
             pincode: shippingAddress.pinCode,
             country: "India",
           },
-          itemsTotal: sellingPriceForPayment * quantity,
+          itemsTotal: baseItemsTotal,
           deliveryCharge: 0,
-          totalAmount: sellingPriceForPayment * quantity,
+          totalAmount: codTotal,
           paymentMethod: "cod",
           Contact_number: shippingAddress.phone,
           user_email: user?.email,
@@ -424,7 +463,8 @@ const ProductDetailPage: React.FC = () => {
 
         toast({
           title: "Order Placed Successfully!",
-          description: "Your order has been placed. You will be redirected shortly.",
+          description:
+            "Your COD order is confirmed. Redirecting you to order details...",
         });
 
         setDirectBuyProduct(null);
@@ -436,7 +476,7 @@ const ProductDetailPage: React.FC = () => {
             state: {
               orderId,
               paymentMethod: "cod",
-              totalAmount: sellingPriceForPayment * quantity,
+              totalAmount: codTotal,
               cartType: "cart",
             },
           });
@@ -451,19 +491,21 @@ const ProductDetailPage: React.FC = () => {
             err?.response?.data?.message || err.message || "Something went wrong",
           variant: "destructive",
         });
+      } finally {
+        setDirectCheckoutLoading(false);
       }
       return;
     }
 
-    // Online payment still uses shared Razorpay-based hook
+    // Online payment via shared Razorpay hook
     const success = await processPayment(
       orderItems,
       shippingAddress,
       paymentMethod,
       {
-        itemsTotal: sellingPriceForPayment * quantity,
+        itemsTotal: baseItemsTotal,
         deliveryCharge: 0,
-        totalAmount: sellingPriceForPayment * quantity,
+        totalAmount: onlineTotal,
       },
       "cart"
     );
@@ -574,6 +616,14 @@ const ProductDetailPage: React.FC = () => {
     ? Math.round(((product.discounted_price! - product.Product_price) / product.discounted_price!) * 100)
     : 0;
   const savings = hasDiscount ? product.discounted_price! - product.Product_price : 0;
+  const lineTotal = displayPrice * quantity;
+  const ONLINE_DISCOUNT = 50; // flat ₹50 extra off for online payment
+  const effectiveCouponDiscount = couponApplied ? Math.min(couponDiscount, lineTotal) : 0;
+  const codPayableTotalRaw = lineTotal - effectiveCouponDiscount;
+  const codPayableTotal = Math.max(1, Math.round(codPayableTotalRaw));
+  const onlineDiscountAmount = Math.min(ONLINE_DISCOUNT, codPayableTotal);
+  const onlinePayableTotal = Math.max(1, codPayableTotal - onlineDiscountAmount);
+  const overallCheckoutLoading = checkoutLoading || directCheckoutLoading;
 
   // ---- Render ----
   if (loading) {
@@ -980,24 +1030,59 @@ const ProductDetailPage: React.FC = () => {
                       : 0;
 
                     return (
-                      <div key={relatedProduct._id} className="flex-shrink-0 w-full cursor-pointer" onClick={() => navigate(`/product/${relatedProduct._id}`)}>
+                      <div
+                        key={relatedProduct._id}
+                        className="flex-shrink-0 w-full cursor-pointer"
+                        onClick={() => navigate(`/product/${relatedProduct._id}`)}
+                      >
                         <Card className="h-full border border-amber-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden bg-white">
                           <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-white via-amber-50 to-amber-100">
-                            <img src={relatedProduct.Product_image[0] || "/fallback.jpg"} alt={relatedProduct.Product_name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" onError={(e) => (e.currentTarget.src = "/fallback.jpg")} />
+                            <img
+                              src={relatedProduct.Product_image[0] || "/fallback.jpg"}
+                              alt={relatedProduct.Product_name}
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                              onError={(e) => (e.currentTarget.src = "/fallback.jpg")}
+                            />
                             <div className="absolute inset-0 bg-gradient-to-b from-white/0 via-white/30 to-white/80" />
-                            <Button variant="ghost" size="icon" className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 hover:bg-white shadow-md backdrop-blur-sm" onClick={(e) => { e.stopPropagation(); if (user) toggleWishlist(transformProductForWishlist(relatedProduct)); else navigate("/login"); }}>
-                              <Heart size={14} className={`${isInWishlist(relatedProduct._id) ? "fill-rose-500 text-rose-500" : "text-amber-400"}`} />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 hover:bg-white shadow-md backdrop-blur-sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (user) toggleWishlist(transformProductForWishlist(relatedProduct));
+                                else navigate("/login");
+                              }}
+                            >
+                              <Heart
+                                size={14}
+                                className={`${isInWishlist(relatedProduct._id) ? "fill-rose-500 text-rose-500" : "text-amber-400"}`}
+                              />
                             </Button>
-                            {relatedProduct.isNew && <Badge className="absolute top-2 left-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 font-semibold text-xs"> <Sparkles size={10} className="mr-1" /> NEW</Badge>}
-                            {relatedHasDiscount && <Badge className="absolute top-2 left-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 font-semibold text-xs">{relatedDiscountPercentage}% OFF</Badge>}
+                            {relatedProduct.isNew && (
+                              <Badge className="absolute top-2 left-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 font-semibold text-xs">
+                                <Sparkles size={10} className="mr-1" /> NEW
+                              </Badge>
+                            )}
+                            {relatedHasDiscount && (
+                              <Badge className="absolute top-2 left-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 font-semibold text-xs">
+                                {relatedDiscountPercentage}% OFF
+                              </Badge>
+                            )}
                           </div>
                           <CardContent className="p-4">
-                            <h3 className="font-semibold text-gray-900 line-clamp-2 mb-2 leading-tight text-sm">{relatedProduct.Product_name}</h3>
+                            <h3 className="font-semibold text-gray-900 line-clamp-2 mb-2 leading-tight text-sm">
+                              {relatedProduct.Product_name}
+                            </h3>
                             <div className="flex items-center justify-between">
                               <div className="flex flex-col">
-                                <span className="font-bold text-amber-600 text-base">₹{relatedDisplayPrice.toLocaleString()}</span>
+                                <span className="font-bold text-amber-600 text-base">
+                                  ₹{relatedDisplayPrice.toLocaleString()}
+                                </span>
                                 {relatedHasDiscount && (
-                                  <span className="text-xs text-gray-400 line-through">₹{relatedMrpPrice.toLocaleString()}</span>
+                                  <span className="text-xs text-gray-400 line-through">
+                                    ₹{relatedMrpPrice.toLocaleString()}
+                                  </span>
                                 )}
                               </div>
                               {relatedHasDiscount && (
@@ -1015,7 +1100,11 @@ const ProductDetailPage: React.FC = () => {
               </div>
 
               <div className="text-center mt-6">
-                <Button variant="outline" onClick={() => navigate(`/category/${product.Product_category.slug}`)} className="border-amber-300 text-amber-700 hover:bg-amber-50 px-6 py-2 text-sm">
+                <Button
+                  variant="outline"
+                  onClick={() => navigate(`/category/${product.Product_category.slug}`)}
+                  className="border-amber-300 text-amber-700 hover:bg-amber-50 px-6 py-2 text-sm"
+                >
                   Explore {product.Product_category.category} Collection
                   <ChevronRight size={16} className="ml-2" />
                 </Button>
@@ -1028,69 +1117,231 @@ const ProductDetailPage: React.FC = () => {
       {/* Checkout Modal */}
       {isCheckingOut && (
         <AnimatePresence>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative w-full max-w-md max-h-full bg-white rounded-2xl overflow-hidden shadow-2xl p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">Shipping Address</h2>
-              <form className="space-y-4">
-                <div>
-                  <Label className="text-sm font-medium text-gray-700">Full Name</Label>
-                  <Input
-                    type="text"
-                    name="fullName"
-                    value={shippingAddress.fullName}
-                    onChange={handleShippingInputChange}
-                    className="mt-2 w-full border border-amber-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-700">Address</Label>
-                  <Input
-                    type="text"
-                    name="address"
-                    value={shippingAddress.address}
-                    onChange={handleShippingInputChange}
-                    className="mt-2 w-full border border-amber-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-700">City</Label>
-                  <Input
-                    type="text"
-                    name="city"
-                    value={shippingAddress.city}
-                    onChange={handleShippingInputChange}
-                    className="mt-2 w-full border border-amber-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-700">State</Label>
-                  <Input
-                    type="text"
-                    name="state"
-                    value={shippingAddress.state}
-                    onChange={handleShippingInputChange}
-                    className="mt-2 w-full border border-amber-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-                  />
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-700">Pin Code</Label>
-                  <Input
-                    type="text"
-                    name="pinCode"
-                    value={shippingAddress.pinCode}
-                    onChange={handleShippingInputChange}
-                    className="mt-2 w-full border border-amber-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-                  />
-                </div>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <Button onClick={() => handleDirectBuyPayment(directBuyProduct!, "cod")} className="flex-1 h-12 text-sm font-semibold bg-gradient-to-r from-amber-500 to-orange-500 text-white">
-                    <Truck size={16} className="mr-2" /> Cash on Delivery
-                  </Button>
-                  <Button onClick={() => handleDirectBuyPayment(directBuyProduct!, "online")} className="flex-1 h-12 text-sm font-semibold bg-gradient-to-r from-amber-600 to-orange-600 text-white">
-                    <Lock size={16} className="mr-2" /> Online Payment
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl overflow-hidden shadow-2xl flex flex-col"
+            >
+              {/* Header */}
+              <div className="flex-shrink-0 bg-gradient-to-r from-amber-600 to-orange-600 text-white px-6 py-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-lg sm:text-xl font-bold">Order & Shipping Details</h2>
+                    <p className="text-xs sm:text-[13px] text-amber-100 mt-1">
+                      Review your product, apply coupon and choose secure payment
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 rounded-full bg-white/10 hover:bg-white/20 text-white"
+                    onClick={() => !overallCheckoutLoading && setIsCheckingOut(false)}
+                  >
+                    <X className="h-4 w-4" />
                   </Button>
                 </div>
-              </form>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-5 bg-gradient-to-br from-white via-amber-50 to-orange-50">
+                {/* Product & Order Summary */}
+                <div className="bg-white/90 rounded-xl border border-amber-200 p-4 flex flex-col sm:flex-row gap-4">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="w-16 h-16 rounded-lg overflow-hidden bg-amber-100 flex-shrink-0">
+                      <img
+                        src={(directBuyProduct || product)?.Product_image[0] || selectedImage || "/fallback.jpg"}
+                        alt={(directBuyProduct || product)?.Product_name || "Product"}
+                        className="w-full h-full object-cover"
+                        onError={(e) => (e.currentTarget.src = "/fallback.jpg")}
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 line-clamp-2">
+                        {(directBuyProduct || product)?.Product_name}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Qty: {quantity} • Ships within 3–4 days
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right space-y-1">
+                    <p className="text-xs text-gray-500">Product total</p>
+                    <p className="text-xl font-bold text-gray-900">₹{lineTotal.toLocaleString()}</p>
+                    {effectiveCouponDiscount > 0 && (
+                      <p className="text-[11px] text-emerald-600 font-medium">
+                        Coupon savings: -₹{effectiveCouponDiscount.toLocaleString()}
+                      </p>
+                    )}
+                    {hasDiscount && (
+                      <p className="text-[11px] text-emerald-600 font-medium">
+                        MRP savings: ₹{savings.toLocaleString()} ({discountPercentage}% OFF)
+                      </p>
+                    )}
+                    <p className="text-[11px] text-emerald-700 font-semibold">Free Delivery in 3–4 days</p>
+                    <p className="text-[11px] text-gray-500">Inclusive of all taxes</p>
+                  </div>
+                </div>
+
+                {/* Coupon Section */}
+                <div className="bg-white/90 rounded-xl border border-amber-100 p-4 space-y-2">
+                  <p className="text-sm font-semibold text-gray-900">Have a coupon?</p>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Input
+                      type="text"
+                      value={couponCode}
+                      onChange={(e) => {
+                        setCouponCode(e.target.value);
+                        if (couponApplied) setCouponApplied(false);
+                      }}
+                      placeholder="Enter coupon code"
+                      className="flex-1 border-amber-200 focus-visible:ring-amber-500"
+                    />
+                    <Button
+                      type="button"
+                      onClick={handleApplyCoupon}
+                      className="px-6 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold"
+                    >
+                      Apply
+                    </Button>
+                  </div>
+                  {couponApplied && (
+                    <p className="text-[11px] text-emerald-700 font-medium mt-1">
+                      Coupon <span className="font-semibold uppercase">{couponCode}</span> applied. You saved ₹{effectiveCouponDiscount.toLocaleString()}.
+                    </p>
+                  )}
+                  <p className="text-[11px] text-gray-500 mt-1">
+                    Extra ₹50 OFF is automatically applied on prepaid / online payments.
+                  </p>
+                </div>
+
+                {/* Shipping Address */}
+                <div className="space-y-3">
+                  <h3 className="text-base font-semibold text-gray-900">Shipping Address</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium text-gray-700">Full Name</Label>
+                      <Input
+                        type="text"
+                        name="fullName"
+                        value={shippingAddress.fullName}
+                        onChange={handleShippingInputChange}
+                        className="mt-1 w-full border border-amber-200 rounded-lg px-3 py-2 text-sm focus-visible:ring-amber-500"
+                        placeholder="Enter your full name"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium text-gray-700">Phone Number</Label>
+                      <Input
+                        type="text"
+                        name="phone"
+                        value={shippingAddress.phone}
+                        disabled
+                        className="mt-1 w-full border border-amber-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500"
+                        placeholder="Verified phone number"
+                      />
+                    </div>
+                    <div className="space-y-1 sm:col-span-2">
+                      <Label className="text-xs font-medium text-gray-700">Address</Label>
+                      <Input
+                        type="text"
+                        name="address"
+                        value={shippingAddress.address}
+                        onChange={handleShippingInputChange}
+                        className="mt-1 w-full border border-amber-200 rounded-lg px-3 py-2 text-sm focus-visible:ring-amber-500"
+                        placeholder="House no, street, area"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium text-gray-700">City</Label>
+                      <Input
+                        type="text"
+                        name="city"
+                        value={shippingAddress.city}
+                        onChange={handleShippingInputChange}
+                        className="mt-1 w-full border border-amber-200 rounded-lg px-3 py-2 text-sm focus-visible:ring-amber-500"
+                        placeholder="City"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium text-gray-700">State</Label>
+                      <Input
+                        type="text"
+                        name="state"
+                        value={shippingAddress.state}
+                        onChange={handleShippingInputChange}
+                        className="mt-1 w-full border border-amber-200 rounded-lg px-3 py-2 text-sm focus-visible:ring-amber-500"
+                        placeholder="State"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium text-gray-700">PIN Code</Label>
+                      <Input
+                        type="text"
+                        name="pinCode"
+                        value={shippingAddress.pinCode}
+                        onChange={handleShippingInputChange}
+                        className="mt-1 w-full border border-amber-200 rounded-lg px-3 py-2 text-sm focus-visible:ring-amber-500"
+                        placeholder="PIN Code"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment Buttons */}
+              <div className="flex-shrink-0 bg-white border-t border-amber-200 px-6 py-4 flex flex-col sm:flex-row gap-3">
+                <Button
+                  type="button"
+                  onClick={() => handleDirectBuyPayment((directBuyProduct || product)!, "online")}
+                  disabled={overallCheckoutLoading}
+                  className="flex-1 h-11 text-sm font-semibold rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg hover:from-emerald-700 hover:to-green-700"
+                >
+                  {overallCheckoutLoading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Processing...
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-2">
+                      <CreditCard size={16} />
+                      <span className="text-left">
+                        <span className="block text-xs">Pay Online</span>
+                        <span className="block text-[11px] opacity-90">Pay ₹{onlinePayableTotal.toLocaleString()} (₹50 OFF + coupon)</span>
+                      </span>
+                    </span>
+                  )}
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleDirectBuyPayment((directBuyProduct || product)!, "cod")}
+                  disabled={overallCheckoutLoading}
+                  className="flex-1 h-11 text-sm font-semibold rounded-xl border-2 border-amber-600 text-amber-700 hover:bg-amber-600 hover:text-white shadow-lg"
+                >
+                  {overallCheckoutLoading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="w-4 h-4 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
+                      Processing...
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-2">
+                      <Truck size={16} />
+                      <span className="text-left">
+                        <span className="block text-xs">Cash on Delivery</span>
+                        <span className="block text-[11px] opacity-90">Pay ₹{codPayableTotal.toLocaleString()} on delivery</span>
+                      </span>
+                    </span>
+                  )}
+                </Button>
+              </div>
             </motion.div>
           </motion.div>
         </AnimatePresence>

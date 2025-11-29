@@ -120,7 +120,8 @@ exports.createOrder = async (req, res) => {
 
     let finalTotal = totalAmount;
     let calculatedItemsTotal = itemsTotal;
-    let deliveryFee = deliveryCharge || 80;
+    // ✅ Free delivery by default (no hidden ₹80)
+    let deliveryFee = typeof deliveryCharge === "number" ? deliveryCharge : 0;
 
     if (!finalTotal) {
       calculatedItemsTotal = items.reduce((total, item) => {
