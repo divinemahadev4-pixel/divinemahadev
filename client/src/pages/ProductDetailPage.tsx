@@ -94,9 +94,6 @@ const ProductDetailPage: React.FC = () => {
     pinCode: "",
     phone: "",
   });
-  const [couponCode, setCouponCode] = useState("");
-  const [couponApplied, setCouponApplied] = useState(false);
-  const [couponDiscount, setCouponDiscount] = useState<number>(0);
   const [directCheckoutLoading, setDirectCheckoutLoading] = useState(false);
 
   // Reviews state
@@ -320,37 +317,6 @@ const ProductDetailPage: React.FC = () => {
     }));
   };
 
-  const handleApplyCoupon = () => {
-    if (!couponCode.trim()) {
-      toast({
-        title: "Enter coupon code",
-        description: "Please enter a coupon code to apply",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const baseDiscount = 50; // flat ₹50 coupon discount
-    const discount = Math.min(baseDiscount, lineTotal);
-
-    if (discount <= 0) {
-      toast({
-        title: "Coupon not applicable",
-        description: "Order amount is too low for this coupon.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setCouponDiscount(discount);
-    setCouponApplied(true);
-    toast({
-      title: "Coupon applied",
-      description: `You will save ₹${discount.toLocaleString()} on this order`,
-      duration: 2500,
-    });
-  };
-
   const handleDirectBuy = () => {
     if (!product) return;
 
@@ -417,8 +383,8 @@ const ProductDetailPage: React.FC = () => {
     // Base totals with discounts
     const sellingPriceForPayment = buyProduct.Product_price;
     const baseItemsTotal = sellingPriceForPayment * quantity;
-    const codTotal = codPayableTotal;
-    const onlineTotal = onlinePayableTotal;
+    const codTotal = Math.max(1, Math.round(baseItemsTotal));
+    const onlineTotal = Math.max(1, codTotal - 50);
 
     const orderItems = [
       {
@@ -617,12 +583,8 @@ const ProductDetailPage: React.FC = () => {
     : 0;
   const savings = hasDiscount ? product.discounted_price! - product.Product_price : 0;
   const lineTotal = displayPrice * quantity;
-  const ONLINE_DISCOUNT = 50; // flat ₹50 extra off for online payment
-  const effectiveCouponDiscount = couponApplied ? Math.min(couponDiscount, lineTotal) : 0;
-  const codPayableTotalRaw = lineTotal - effectiveCouponDiscount;
-  const codPayableTotal = Math.max(1, Math.round(codPayableTotalRaw));
-  const onlineDiscountAmount = Math.min(ONLINE_DISCOUNT, codPayableTotal);
-  const onlinePayableTotal = Math.max(1, codPayableTotal - onlineDiscountAmount);
+  const codPayableTotal = Math.max(1, Math.round(lineTotal));
+  const onlinePayableTotal = Math.max(1, codPayableTotal - 50);
   const overallCheckoutLoading = checkoutLoading || directCheckoutLoading;
 
   // ---- Render ----
@@ -1135,7 +1097,7 @@ const ProductDetailPage: React.FC = () => {
                   <div>
                     <h2 className="text-lg sm:text-xl font-bold">Order & Shipping Details</h2>
                     <p className="text-xs sm:text-[13px] text-amber-100 mt-1">
-                      Review your product, apply coupon and choose secure payment
+                      Review your product and choose secure payment
                     </p>
                   </div>
                   <Button
@@ -1174,11 +1136,6 @@ const ProductDetailPage: React.FC = () => {
                   <div className="text-right space-y-1">
                     <p className="text-xs text-gray-500">Product total</p>
                     <p className="text-xl font-bold text-gray-900">₹{lineTotal.toLocaleString()}</p>
-                    {effectiveCouponDiscount > 0 && (
-                      <p className="text-[11px] text-emerald-600 font-medium">
-                        Coupon savings: -₹{effectiveCouponDiscount.toLocaleString()}
-                      </p>
-                    )}
                     {hasDiscount && (
                       <p className="text-[11px] text-emerald-600 font-medium">
                         MRP savings: ₹{savings.toLocaleString()} ({discountPercentage}% OFF)
@@ -1187,38 +1144,6 @@ const ProductDetailPage: React.FC = () => {
                     <p className="text-[11px] text-emerald-700 font-semibold">Free Delivery in 3–4 days</p>
                     <p className="text-[11px] text-gray-500">Inclusive of all taxes</p>
                   </div>
-                </div>
-
-                {/* Coupon Section */}
-                <div className="bg-white/90 rounded-xl border border-amber-100 p-4 space-y-2">
-                  <p className="text-sm font-semibold text-gray-900">Have a coupon?</p>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Input
-                      type="text"
-                      value={couponCode}
-                      onChange={(e) => {
-                        setCouponCode(e.target.value);
-                        if (couponApplied) setCouponApplied(false);
-                      }}
-                      placeholder="Enter coupon code"
-                      className="flex-1 border-amber-200 focus-visible:ring-amber-500"
-                    />
-                    <Button
-                      type="button"
-                      onClick={handleApplyCoupon}
-                      className="px-6 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold"
-                    >
-                      Apply
-                    </Button>
-                  </div>
-                  {couponApplied && (
-                    <p className="text-[11px] text-emerald-700 font-medium mt-1">
-                      Coupon <span className="font-semibold uppercase">{couponCode}</span> applied. You saved ₹{effectiveCouponDiscount.toLocaleString()}.
-                    </p>
-                  )}
-                  <p className="text-[11px] text-gray-500 mt-1">
-                    Extra ₹50 OFF is automatically applied on prepaid / online payments.
-                  </p>
                 </div>
 
                 {/* Shipping Address */}
@@ -1313,7 +1238,7 @@ const ProductDetailPage: React.FC = () => {
                       <CreditCard size={16} />
                       <span className="text-left">
                         <span className="block text-xs">Pay Online</span>
-                        <span className="block text-[11px] opacity-90">Pay ₹{onlinePayableTotal.toLocaleString()} (₹50 OFF + coupon)</span>
+                        <span className="block text-[11px] opacity-90">Pay ₹{onlinePayableTotal.toLocaleString()} (₹50 OFF)</span>
                       </span>
                     </span>
                   )}
