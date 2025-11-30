@@ -11,6 +11,8 @@ import image1 from "../utils/image1.jpg"
 import image2 from "../utils/image2.jpg"
 import image_phone from "../utils/image_phone.jpg"
 import footer_image from "../utils/footer_image.png"
+import phone_image from "../utils/phone_image.jpg"
+import phone_image2 from "../utils/phone_image2.jpg"
 
 const Index = () => {
   return (
@@ -27,7 +29,7 @@ const Index = () => {
         {/* Scroll-zoom hero image after Divine Collection */}
         <ScrollZoomHero
           imageSrc={footer_image}
-          mobileImageSrc={image_phone}
+          mobileImageSrc={phone_image2}
           alt="100+ products for your spiritual journey"
         />
 
@@ -37,7 +39,7 @@ const Index = () => {
         {/* Second scroll-zoom hero image after Divine Products */}
         <ScrollZoomHero
           imageSrc={footer_image}
-          mobileImageSrc={image_phone}
+          mobileImageSrc={phone_image}
         />
         <ServiceHighlights />
         <Footer />
