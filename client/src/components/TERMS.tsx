@@ -15,7 +15,7 @@ const TermsConditions = () => {
           <h1 className="text-3xl font-bold text-gray-900">Terms & Conditions</h1>
         </div>
         <p className="text-lg text-gray-600">
-          DivineMahadev - Spiritual Jewelry & Sacred Murtis
+          Divine Mahakal - Spiritual Jewelry & Sacred Murtis
         </p>
       </div>
 
@@ -33,13 +33,14 @@ const TermsConditions = () => {
             <h2 className="text-xl font-bold text-gray-900">General</h2>
           </div>
           <p className="text-gray-700 leading-relaxed">
-            This website is operated by <strong>DivineMahadev</strong>, a trusted online platform 
-            specializing in spiritual jewelry, sacred murtis, and divine artifacts dedicated to Hindu gods. 
-            By accessing or using this website, you agree to comply with our spiritual commerce policies and terms.
+            This website is operated by <strong>Divine Mahakal</strong>, a devoted online platform
+            offering spiritual jewelry, sacred murtis, and divine artifacts dedicated to Hindu deities.
+            By accessing or using this website, you agree to follow our spiritual commerce policies and terms
+            designed to protect both devotees and the sanctity of our offerings.
           </p>
         </motion.section>
 
-        {/* 2. Products & Custom Orders */}
+        {/* 2. Use of Website & Eligibility */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -50,25 +51,34 @@ const TermsConditions = () => {
             <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center">
               <span className="text-white font-bold text-sm">2</span>
             </div>
-            <h2 className="text-xl font-bold text-gray-900">Products & Custom Orders</h2>
+            <h2 className="text-xl font-bold text-gray-900">Use of Website & Eligibility</h2>
           </div>
           <ul className="space-y-3 text-gray-700">
             <li className="flex items-start gap-2">
               <div className="w-2 h-2 bg-amber-500 rounded-full mt-2 flex-shrink-0"></div>
-              <span>All spiritual products and murtis are subject to availability</span>
+              <span>
+                Divine Mahakal is a spiritual ecommerce platform. By using this website you agree to use it only
+                for lawful, devotional and personal purposes and not for any fraudulent or harmful activity.
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <div className="w-2 h-2 bg-amber-500 rounded-full mt-2 flex-shrink-0"></div>
-              <span>Customized spiritual items must be confirmed with our team before purchase</span>
+              <span>
+                You must be at least 18 years old to place an order, or use the site under the guidance of a parent
+                or legal guardian who accepts these terms on your behalf.
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <div className="w-2 h-2 bg-amber-500 rounded-full mt-2 flex-shrink-0"></div>
-              <span>For customization requests, contact us at +91 92014 11433 or divinemahakal.in</span>
+              <span>
+                Any attempt to misuse the platform, including fake orders, payment fraud, abuse of offers or
+                disrespectful communication with our team, may lead to cancellation of services and blocking of access.
+              </span>
             </li>
           </ul>
         </motion.section>
 
-        {/* 3. Pricing */}
+        {/* 3. Orders & Acceptance */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -79,15 +89,17 @@ const TermsConditions = () => {
             <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
               <span className="text-white font-bold text-sm">3</span>
             </div>
-            <h2 className="text-xl font-bold text-gray-900">Pricing</h2>
+            <h2 className="text-xl font-bold text-gray-900">Orders & Acceptance</h2>
           </div>
           <p className="text-gray-700 leading-relaxed">
-            All prices are in INR (Indian Rupees) and inclusive of applicable taxes. 
-            Shipping charges will be clearly displayed at checkout.
+            When you place an order on Divine Mahakal, it is considered an <strong>offer</strong> to purchase the
+            selected spiritual products. Your order is confirmed only after we verify the details, accept the
+            payment method and dispatch the items. We reserve the right to accept or cancel any order in case of
+            stock issues, incorrect pricing, suspicious activity or any reason related to the sanctity of our store.
           </p>
         </motion.section>
 
-        {/* 4. Shipping & Delivery */}
+        {/* 4. Shipping & Delivery Overview */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -98,15 +110,17 @@ const TermsConditions = () => {
             <div className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center">
               <span className="text-white font-bold text-sm">4</span>
             </div>
-            <h2 className="text-xl font-bold text-gray-900">Shipping & Delivery</h2>
+            <h2 className="text-xl font-bold text-gray-900">Shipping & Delivery Overview</h2>
           </div>
           <div className="flex items-center gap-3 mb-3">
             <Truck className="w-5 h-5 text-amber-600" />
             <span className="font-semibold text-gray-800">Order Processing</span>
           </div>
           <p className="text-gray-700 mb-4">
-            Spiritual orders are dispatched within 2-3 working days. Deliveries are fulfilled via 
-            trusted courier partners. Delivery timelines may vary depending on location.
+            Spiritual orders are typically processed and dispatched within a few working days through trusted
+            courier partners. For detailed timelines (including the current 3–5 day delivery guidance), please
+            refer to our Shipping / Privacy Policy page. Actual delivery time may vary based on your location and
+            courier service conditions.
           </p>
         </motion.section>
 
@@ -124,7 +138,9 @@ const TermsConditions = () => {
             <h2 className="text-xl font-bold text-gray-900">Cancellations</h2>
           </div>
           <p className="text-gray-700 leading-relaxed">
-            Orders cannot be cancelled after dispatch. Custom spiritual orders cannot be cancelled once confirmed.
+            Because each product is treated as a sacred item, <strong>orders cannot be cancelled once they are
+            dispatched</strong>. Custom or personalized spiritual orders (special puja, custom designs, etc.) cannot
+            be cancelled once confirmed, as the spiritual process and material preparation begins immediately.
           </p>
         </motion.section>
 
@@ -144,9 +160,11 @@ const TermsConditions = () => {
           <div className="flex items-start gap-3 mb-3">
             <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
             <p className="text-gray-700">
-              We follow a strict <strong>No Refund & No Return</strong> policy. 
-              If a divine product arrives damaged or incorrect, customers must provide an 
-              unboxing video and clear photo proof within 24 hours of delivery.
+              Divine Mahakal follows a strict <strong>No Refund & No Return</strong> policy for sacred products,
+              as detailed on our dedicated Refund Policy page. The only exception is if the order is delivered
+              <strong>broken, physically damaged or incorrect</strong> and you raise a request within
+              <strong> 24 hours of delivery</strong> with a full unboxing video and clear photos as proof.
+              All such cases are handled as per our Refund & Return Policy.
             </p>
           </div>
         </motion.section>
@@ -170,10 +188,13 @@ const TermsConditions = () => {
           </div>
           <p className="text-gray-700">
             All payments are processed securely through Razorpay (supporting UPI, cards, net banking, wallets, etc.).
+            We may offer Cash on Delivery (COD) or special benefits for online prepaid payments from time to time.
+            Exact offers, discounts and eligibility (such as ₹50 OFF or percentage discounts) will always be
+            displayed at checkout and are subject to change as per Divine Mahakal’s discretion.
           </p>
         </motion.section>
 
-        {/* 8. Intellectual Property */}
+        {/* 8. Liability & Ownership */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -187,7 +208,7 @@ const TermsConditions = () => {
             <h2 className="text-xl font-bold text-gray-900">Intellectual Property</h2>
           </div>
           <p className="text-gray-700 leading-relaxed">
-            All content, designs, and product imagery belong to DivineMahadev. 
+            All content, designs, and product imagery belong to Divine Mahakal. 
             Unauthorized use, reproduction, or distribution is strictly prohibited.
           </p>
         </motion.section>
@@ -203,7 +224,7 @@ const TermsConditions = () => {
             <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
               <Heart className="w-4 h-4 text-orange-500" />
             </div>
-            <h2 className="text-xl font-bold">Contact DivineMahadev</h2>
+            <h2 className="text-xl font-bold">Contact Divine Mahakal</h2>
           </div>
           
           <div className="space-y-4">
@@ -235,7 +256,7 @@ const TermsConditions = () => {
       {/* Footer Note */}
       <div className="mt-8 text-center">
         <p className="text-gray-500 text-sm">
-          © {new Date().getFullYear()} DivineMahadev. All rights reserved. | Spiritual Commerce
+          &copy; {new Date().getFullYear()} Divine Mahakal. All rights reserved. | Spiritual Commerce
         </p>
       </div>
     </div>

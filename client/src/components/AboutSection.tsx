@@ -58,7 +58,7 @@ const AboutSection = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.7, delay: 0.3, ease: "easeOut" }}
             >
-              At DivineMahadev, we bring you sacred spiritual items blessed in the holy city of Ujjain, 
+              At Divine Mahakal, we bring you sacred spiritual items blessed in the holy city of Ujjain, 
               home to the majestic Mahakaleshwar Jyotirlinga. Each mala, murti, and spiritual artifact carries 
               the divine energy of Lord Shiva directly from the sacred temple.
             </motion.p>

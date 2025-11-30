@@ -24,7 +24,7 @@ export const BannerScrollingLine = () => {
   const items = [
     { icon: "🚚", text: "Free Shipping All Over India" },
     { icon: "💰", text: "Cash on Delivery Available" },
-    { icon: "🎁", text: "15% OFF on Prepaid Orders" },
+    { icon: "🎁", text: "₹50 OFF on Online Prepaid Orders" },
     { icon: "🙏", text: "Trusted Divine Seller" },
     { icon: "⭐", text: "100% Authentic Products" },
     { icon: "✨", text: "सच्‍चाई और गुणवत्ता का वादा" },

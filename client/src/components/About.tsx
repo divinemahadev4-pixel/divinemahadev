@@ -17,7 +17,7 @@ const AboutUs = () => {
             <Gem className="w-8 h-8 text-white" />
           </div>
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">About DivineMahadev</h1>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">About Divine Mahakal</h1>
             <div className="w-20 h-1 bg-gradient-to-r from-orange-500 to-amber-600 mx-auto rounded-full"></div>
           </div>
         </motion.div>
@@ -42,7 +42,7 @@ const AboutUs = () => {
           <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-3xl p-8 border border-orange-100">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Our Divine Mission</h2>
             <p className="text-gray-700 text-lg leading-relaxed mb-4">
-              At DivineMahadev, our mission is to bring divine blessings and spiritual connection 
+              At Divine Mahakal, our mission is to bring divine blessings and spiritual connection 
               to devotees through authentic, carefully crafted spiritual products. Every piece we create 
               carries sacred energy and is made with devotional care.
             </p>
@@ -163,7 +163,7 @@ const AboutUs = () => {
       {/* Footer Note */}
       <div className="mt-12 text-center">
         <p className="text-gray-500 text-sm">
-          © {new Date().getFullYear()} DivineMahadev. Spreading divine blessings across India.
+          &copy; {new Date().getFullYear()} Divine Mahakal. Spreading divine blessings across India.
         </p>
       </div>
     </div>

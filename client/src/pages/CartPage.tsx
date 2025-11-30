@@ -222,7 +222,7 @@ const CartPage = () => {
           >
             <div className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-100 to-amber-50 text-orange-700 px-4 py-2 rounded-full text-sm font-semibold mb-4 border border-orange-200">
               <Sparkles className="w-4 h-4" />
-              DivineMahadev Sacred Items
+              Divine Mahakal Sacred Items
             </div>
             <h1 className="text-3xl lg:text-4xl font-bold text-orange-900 mb-2">
               Divine Cart
@@ -426,7 +426,7 @@ const CartPage = () => {
                   <div>
                     <h2 className="text-xl font-bold">Complete Your Divine Order</h2>
                     <p className="text-orange-100 text-sm mt-1">
-                      Sacred shopping experience with DivineMahadev
+                      Sacred shopping experience with Divine Mahakal
                     </p>
                   </div>
                   <Button

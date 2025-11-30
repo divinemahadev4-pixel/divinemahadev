@@ -685,15 +685,46 @@ const ProductDetailPage: React.FC = () => {
                 </div>
               </Card>
 
-              <div className="grid grid-cols-4 gap-3">
+              {/* Mobile: horizontal scroll thumbnails */}
+              <div className="flex md:hidden gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory">
                 {product.Product_image.map((img, idx) => (
-                  <Card key={idx} className={`overflow-hidden cursor-pointer border-2 transition-all duration-300 hover:scale-105 ${selectedImage === img ? "border-amber-400 ring-2 ring-amber-200 shadow-lg" : "border-amber-200 hover:border-amber-300"}`} onClick={() => setSelectedImage(img)}>
+                  <Card
+                    key={idx}
+                    className={`snap-start min-w-[5.5rem] max-w-[5.5rem] overflow-hidden cursor-pointer border-2 transition-all duration-300 hover:scale-105 ${selectedImage === img ? "border-amber-400 ring-2 ring-amber-200 shadow-lg" : "border-amber-200 hover:border-amber-300"}`}
+                    onClick={() => setSelectedImage(img)}
+                  >
                     <div className="aspect-square bg-gradient-to-br from-amber-50 to-amber-100">
-                      <img src={img} alt={`View ${idx + 1}`} className="w-full h-full object-cover" onError={(e) => (e.currentTarget.src = "/fallback.jpg")} />
+                      <img
+                        src={img}
+                        alt={`View ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => (e.currentTarget.src = "/fallback.jpg")}
+                      />
                     </div>
                   </Card>
                 ))}
               </div>
+
+              {/* Desktop: 4-column grid thumbnails */}
+              <div className="hidden md:grid grid-cols-4 gap-3">
+                {product.Product_image.map((img, idx) => (
+                  <Card
+                    key={idx}
+                    className={`overflow-hidden cursor-pointer border-2 transition-all duration-300 hover:scale-105 ${selectedImage === img ? "border-amber-400 ring-2 ring-amber-200 shadow-lg" : "border-amber-200 hover:border-amber-300"}`}
+                    onClick={() => setSelectedImage(img)}
+                  >
+                    <div className="aspect-square bg-gradient-to-br from-amber-50 to-amber-100">
+                      <img
+                        src={img}
+                        alt={`View ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => (e.currentTarget.src = "/fallback.jpg")}
+                      />
+                    </div>
+                  </Card>
+                ))}
+              </div>
+
             </motion.div>
 
             {/* Right: Info */}
@@ -790,7 +821,10 @@ const ProductDetailPage: React.FC = () => {
                           { label: "Warranty", value: "2 Years" },
                           { label: "Return Policy", value: "30 Days" }
                         ].map((spec, idx) => (
-                          <div key={idx} className="flex justify-between py-2 border-b border-amber-100">
+                          <div
+                            key={idx}
+                            className="flex justify-between py-2 border-b border-amber-100"
+                          >
                             <span className="font-medium text-gray-600 text-sm">{spec.label}</span>
                             <span className="font-semibold text-gray-900 text-sm">{spec.value}</span>
                           </div>
@@ -982,7 +1016,7 @@ const ProductDetailPage: React.FC = () => {
               </div>
 
               <div className="relative">
-                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                   {relatedProducts.map((relatedProduct) => {
                     const relatedHasDiscount = relatedProduct.discounted_price && relatedProduct.discounted_price > relatedProduct.Product_price;
                     const relatedDisplayPrice = relatedProduct.Product_price; // Selling price
@@ -994,10 +1028,10 @@ const ProductDetailPage: React.FC = () => {
                     return (
                       <div
                         key={relatedProduct._id}
-                        className="flex-shrink-0 w-full cursor-pointer"
+                        className="w-full cursor-pointer"
                         onClick={() => navigate(`/product/${relatedProduct._id}`)}
                       >
-                        <Card className="h-full border border-amber-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden bg-white">
+                        <Card className="group h-full border border-amber-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden bg-white">
                           <div className="relative aspect-square overflow-hidden bg-gradient-to-br from-white via-amber-50 to-amber-100">
                             <img
                               src={relatedProduct.Product_image[0] || "/fallback.jpg"}
@@ -1005,7 +1039,6 @@ const ProductDetailPage: React.FC = () => {
                               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                               onError={(e) => (e.currentTarget.src = "/fallback.jpg")}
                             />
-                            <div className="absolute inset-0 bg-gradient-to-b from-white/0 via-white/30 to-white/80" />
                             <Button
                               variant="ghost"
                               size="icon"

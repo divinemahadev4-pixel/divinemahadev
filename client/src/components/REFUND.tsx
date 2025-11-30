@@ -15,12 +15,12 @@ const RefundPolicy = () => {
           <h1 className="text-3xl font-bold text-gray-900">Refund & Return Policy</h1>
         </div>
         <p className="text-lg text-gray-600">
-          DivineMahadev - Spiritual Commerce Guidelines
+          Divine Mahakal - Spiritual Commerce Guidelines
         </p>
       </div>
 
       <div className="space-y-6">
-        {/* No Refunds & Returns */}
+        {/* Refund & Return Policy */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -31,14 +31,19 @@ const RefundPolicy = () => {
               <X className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">No Refunds & Returns</h2>
-              <p className="text-red-600 text-sm font-medium">All purchases are final sale</p>
+              <h2 className="text-xl font-bold text-gray-900">Refund & Return Policy</h2>
+              <p className="text-red-600 text-sm font-medium">No refunds or returns except damaged delivery</p>
             </div>
           </div>
-          <div className="bg-white rounded-xl p-4 border border-red-100">
+          <div className="bg-white rounded-xl p-4 border border-red-100 space-y-3">
             <p className="text-gray-700 leading-relaxed">
-              Due to the sacred and spiritual nature of our products, <strong>all purchases are final sale</strong>. 
-              We do not accept returns, refunds, or exchanges for divine items, murtis, and spiritual jewelry once they have been dispatched.
+              Due to the sacred and spiritual nature of our products, <strong>all purchases are generally final sale</strong>.
+              We do not accept returns, refunds, or exchanges for divine items, murtis, and spiritual jewelry once they have been dispatched and delivered in good condition.
+            </p>
+            <p className="text-gray-700 text-sm leading-relaxed">
+              <strong>Only exception:</strong> if your order is delivered <strong>broken, physically damaged, or incorrect</strong>,
+              you must raise a request within <strong>24 hours of delivery</strong> with complete proof (unboxing video + clear photos),
+              as explained in the "Damaged Divine Products" section below.
             </p>
           </div>
         </motion.section>
@@ -167,19 +172,35 @@ const RefundPolicy = () => {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="bg-white rounded-lg p-3 border border-green-100">
-                    <p className="text-xs text-gray-600 mb-1">📧 Email</p>
-                    <p className="font-semibold text-gray-900 text-sm">divinemahakal.in</p>
+                    <p className="text-xs text-gray-600 mb-1">Email</p>
+                    <p className="font-semibold text-gray-900 text-sm">
+                      <a
+                        href="mailto:divinemahakal.in@gmail.com"
+                        className="text-emerald-700 hover:underline"
+                      >
+                        divinemahakal.in@gmail.com
+                      </a>
+                    </p>
                   </div>
                   
                   <div className="bg-white rounded-lg p-3 border border-green-100">
-                    <p className="text-xs text-gray-600 mb-1">📱 WhatsApp</p>
-                    <p className="font-semibold text-gray-900 text-sm">+91 92014 11433</p>
+                    <p className="text-xs text-gray-600 mb-1">WhatsApp</p>
+                    <p className="font-semibold text-gray-900 text-sm">
+                      <a
+                        href="https://wa.me/919201411433"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-emerald-700 hover:underline"
+                      >
+                        +91 92014 11433
+                      </a>
+                    </p>
                   </div>
                 </div>
 
                 <div className="bg-green-500 rounded-lg p-3 text-white text-center">
                   <p className="text-sm font-semibold">
-                    🕉️ Provide order ID + unboxing video for quick resolution
+                    Provide order ID + unboxing video for quick resolution
                   </p>
                 </div>
               </div>
@@ -217,8 +238,20 @@ const RefundPolicy = () => {
           Need assistance with a damaged product? Contact us within 24 hours of delivery with evidence.
         </p>
         <div className="flex justify-center gap-4 mt-3">
-          <span className="text-xs text-gray-500">📧 divinemahakal.in</span>
-          <span className="text-xs text-gray-500">📱 +91 92014 11433</span>
+          <a
+            href="mailto:divinemahakal.in@gmail.com"
+            className="text-xs text-gray-500 hover:underline"
+          >
+            Email: divinemahakal.in@gmail.com
+          </a>
+          <a
+            href="https://wa.me/919201411433"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-gray-500 hover:underline"
+          >
+            WhatsApp: +91 92014 11433
+          </a>
         </div>
       </motion.div>
     </div>

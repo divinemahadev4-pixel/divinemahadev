@@ -196,7 +196,7 @@ const ContactSection = () => {
       {/* Footer Note */}
       <div className="mt-8 text-center">
         <p className="text-gray-500 text-sm">
-          © {new Date().getFullYear()} DivineMahadev. Serving devotees worldwide with divine products.
+          &copy; {new Date().getFullYear()} Divine Mahakal. Serving devotees worldwide with divine products.
         </p>
       </div>
     </div>
