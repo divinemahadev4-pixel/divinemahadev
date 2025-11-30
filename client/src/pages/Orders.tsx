@@ -579,16 +579,81 @@ const Orders = () => {
                 </div>
               </div>
 
-              {/* Status progress */}
+              {/* Status checkpoints timeline (like Amazon) */}
               {(() => {
                 const st = orderStatus[selectedOrder.status];
+                const steps: OrderState[] = [
+                  "pending",
+                  "processing",
+                  "shipped",
+                  "delivered",
+                ];
+
+                const currentRaw = selectedOrder.status as OrderState;
+                const currentIndex = (() => {
+                  const idx = steps.indexOf(currentRaw);
+                  if (idx >= 0) return idx;
+                  // For cancelled / failed, keep at first step but label will show the real status
+                  return 0;
+                })();
+
                 return (
-                  <div className="space-y-1">
+                  <div className="space-y-2">
                     <div className="flex justify-between text-[11px] text-orange-700">
                       <span>Order Status</span>
-                      <span>{st.label}</span>
+                      <span className="capitalize">{st.label}</span>
                     </div>
-                    <Progress value={st.progress} className="h-1.5 bg-orange-100/70" />
+
+                    {/* Dots + connecting lines */}
+                    <div className="flex items-center justify-between gap-1">
+                      {steps.map((step, idx) => {
+                        const isCompleted = idx < currentIndex;
+                        const isActive = idx === currentIndex;
+
+                        const circleClasses = isCompleted
+                          ? "bg-orange-500 border-orange-500 text-white"
+                          : isActive
+                          ? "bg-white border-orange-500 text-orange-600"
+                          : "bg-white border-orange-200 text-orange-300";
+
+                        return (
+                          <div key={step} className="flex items-center w-full">
+                            <div
+                              className={`flex items-center justify-center w-6 h-6 rounded-full border text-[11px] font-semibold shadow-sm ${circleClasses}`}
+                            >
+                              {idx + 1}
+                            </div>
+                            {idx < steps.length - 1 && (
+                              <div
+                                className={`flex-1 h-0.5 mx-1 rounded-full ${
+                                  idx < currentIndex
+                                    ? "bg-orange-500"
+                                    : "bg-orange-100"
+                                }`}
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Step labels */}
+                    <div className="flex justify-between mt-1 text-[10px] text-orange-700">
+                      {steps.map((step) => (
+                        <span
+                          key={step}
+                          className="flex-1 text-center capitalize px-0.5"
+                        >
+                          {orderStatus[step].label}
+                        </span>
+                      ))}
+                    </div>
+
+                    {(currentRaw === "cancelled" || currentRaw === "failed") && (
+                      <p className="text-[10px] text-red-600 mt-1 text-right font-medium">
+                        Current status: {currentRaw}
+                      </p>
+                    )}
                   </div>
                 );
               })()}

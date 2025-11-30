@@ -108,12 +108,12 @@ const ProductCard: React.FC<{
       <motion.div
         layout
         onClick={() => onClick(product._id)}
-        // Added p-3 here to create spacing between card edge and image (like a frame)
-        // Kept your "Background Box" style (white bg, border, shadow)
         className="group relative flex flex-col h-full bg-[#FFFBF7] md:bg-white rounded-2xl border border-orange-100/60 shadow-sm hover:shadow-xl hover:border-orange-200 transition-all duration-300 overflow-hidden cursor-pointer p-2.5 md:p-3"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.25 }}
         whileHover={{ y: -4 }}
+        transition={{ duration: 0.45, ease: "easeOut" }}
       >
         {/* Image Container - Rounded corners INSIDE the card */}
         <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-gray-50 mb-3">
@@ -158,8 +158,8 @@ const ProductCard: React.FC<{
               onWishlistToggle(e, product);
             }}
             className={`absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center shadow-sm backdrop-blur-sm transition-colors ${
-              inWishlist 
-                ? "bg-red-50 text-red-500" 
+              inWishlist
+                ? "bg-red-50 text-red-500"
                 : "bg-white/80 text-gray-500 hover:text-orange-600"
             }`}
           >
@@ -170,29 +170,29 @@ const ProductCard: React.FC<{
         {/* Content Section - Aligned to match reference */}
         <div className="flex flex-col flex-1 px-1">
           {/* Title - Bold and Dark */}
-          <h3 
+          <h3
             className="text-[13px] md:text-[15px] font-bold text-gray-900 line-clamp-2 leading-snug mb-1.5"
-            style={{ fontFamily: "'Playfair Display', serif" }} // Or standard font if preferred
+            style={{ fontFamily: "'Playfair Display', serif" }}
           >
             {product.Product_name}
           </h3>
-          
+
           {/* Rating - Orange Stars + Count */}
           <div className="flex items-center gap-1 mb-3">
-             <div className="flex gap-0.5">
+            <div className="flex gap-0.5">
               {Array.from({ length: 5 }).map((_, index) => (
                 <Star
                   key={index}
                   className="w-3 h-3 md:w-3.5 md:h-3.5"
-                  fill={ratingValue >= index + 1 ? "#F59E0B" : "transparent"} // Amber-500
+                  fill={ratingValue >= index + 1 ? "#F59E0B" : "transparent"}
                   stroke={ratingValue >= index + 1 ? "#F59E0B" : "#D1D5DB"}
                   strokeWidth={2}
                 />
               ))}
-             </div>
-             <span className="text-[11px] text-gray-500 font-medium pt-0.5">
-               {hasReviewCount ? `(${product.Product_reviewCount})` : "(0)"}
-             </span>
+            </div>
+            <span className="text-[11px] text-gray-500 font-medium pt-0.5">
+              {hasReviewCount ? `(${product.Product_reviewCount})` : "(0)"}
+            </span>
           </div>
 
           {/* Price Section - Matched to Reference (Black Badge) */}
@@ -203,13 +203,13 @@ const ProductCard: React.FC<{
                 {currency(sellingPrice)}
               </span>
             </div>
-            
+
             {product.discounted_price && product.discounted_price !== sellingPrice && (
               <span className="text-xs text-gray-400 line-through decoration-gray-400">
                 {currency(product.discounted_price)}
               </span>
             )}
-            
+
             {/* The Black Pill Badge from Reference */}
             {hasDiscount && discountPercentage > 0 && (
               <span className="bg-black text-white text-[10px] md:text-[11px] font-bold px-1.5 py-0.5 rounded-[4px]">
@@ -249,7 +249,7 @@ const FeaturedProducts: React.FC = () => {
   const loadMoreCount = 10;
 
   const getCurrentPrice = (p: ApiProduct) => {
-    return p.Product_price; 
+    return p.Product_price;
   };
 
   const calculateAverageRating = (reviews: { rating: number }[]) => {
@@ -483,9 +483,10 @@ const FeaturedProducts: React.FC = () => {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6">
           <motion.header
             className="mb-10 text-center max-w-4xl mx-auto"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
           >
             <div className="inline-flex items-center gap-2 mb-3 bg-orange-50 rounded-full px-3 py-1 border border-orange-100">
               <Sparkles className="w-3 h-3 text-orange-500" />

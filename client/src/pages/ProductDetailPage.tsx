@@ -684,8 +684,11 @@ const ProductDetailPage: React.FC = () => {
                     className="w-full h-full object-cover cursor-zoom-in"
                     onError={(e) => (e.currentTarget.src = "/fallback.jpg")}
                     onClick={() => setShowImageModal(true)}
+                    initial={{ opacity: 0, y: 32, scale: 0.96 }}
+                    whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                    viewport={{ once: true, amount: 0.5 }}
                     whileHover={{ scale: 1.02 }}
-                    transition={{ duration: 0.3 }}
+                    transition={{ duration: 0.5, ease: "easeOut" }}
                   />
 
                   <div className="absolute top-3 left-3 flex flex-col gap-2">
