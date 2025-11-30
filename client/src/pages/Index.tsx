@@ -13,6 +13,7 @@ import image_phone from "../utils/image_phone.jpg"
 import footer_image from "../utils/footer_image.png"
 import phone_image from "../utils/phone_image.jpg"
 import phone_image2 from "../utils/phone_image2.jpg"
+import india_image from "../utils/india image.png"
 
 const Index = () => {
   return (
@@ -39,7 +40,7 @@ const Index = () => {
         {/* Second scroll-zoom hero image after Divine Products */}
         <ScrollZoomHero
           imageSrc={footer_image}
-          mobileImageSrc={phone_image}
+          mobileImageSrc={india_image}
         />
         <ServiceHighlights />
         <Footer />
