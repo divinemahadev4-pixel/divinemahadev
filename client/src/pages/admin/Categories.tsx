@@ -27,6 +27,8 @@ export default function Categories() {
 
   // Edit dialog state
   const [editing, setEditing] = useState<Cat | null>(null);
+  const [editName, setEditName] = useState<string>("");
+  const [editDescription, setEditDescription] = useState<string>("");
   const [editImageUrl, setEditImageUrl] = useState<string>("");
   const [editUploading, setEditUploading] = useState<boolean>(false);
   const [editSaving, setEditSaving] = useState<boolean>(false);
@@ -135,22 +137,44 @@ export default function Categories() {
     }
   };
 
-  // Save edit: send only { id, image } — text remains unchanged
-  const saveEditedImage = async () => {
-    if (!editing || !editImageUrl) {
-      toast({ title: "Missing", description: "Please upload an image first.", variant: "destructive" });
+  // Save edit: send id, name, description and image (if changed)
+  const saveEditedCategory = async () => {
+    if (!editing) {
       return;
     }
+
+    if (!editName.trim()) {
+      toast({ title: "Missing", description: "Category name is required.", variant: "destructive" });
+      return;
+    }
+
+    if (!editDescription.trim()) {
+      toast({ title: "Missing", description: "Category description is required.", variant: "destructive" });
+      return;
+    }
+
+    const finalImage = editImageUrl || editing.image || "";
     setEditSaving(true);
     try {
-      await axios.post(`${API_URL}/admin/update/category`, { id: editing.id, image: editImageUrl }, {
+      await axios.post(`${API_URL}/admin/update/category`, {
+        id: editing.id,
+        name: editName,
+        description: editDescription,
+        image: finalImage,
+      }, {
         withCredentials: true,
         headers: adminAuthHeader
       });
-      setCategories(prev => prev.map(c => c.id === editing.id ? { ...c, image: editImageUrl } : c));
+      setCategories(prev => prev.map(c =>
+        c.id === editing.id
+          ? { ...c, name: editName, description: editDescription, image: finalImage }
+          : c
+      ));
       setEditing(null);
+      setEditName("");
+      setEditDescription("");
       setEditImageUrl("");
-      toast({ title: "Image Updated", description: "Category image updated successfully.", variant: "default" });
+      toast({ title: "Category Updated", description: "Category details updated successfully.", variant: "default" });
     } catch (err: any) {
       toast({ title: "Update Error", description: err?.response?.data?.message || "Failed to update image", variant: "destructive" });
     } finally {
@@ -244,6 +268,8 @@ export default function Categories() {
                         size="sm"
                         onClick={() => {
                           setEditing(category);
+                          setEditName(category.name || "");
+                          setEditDescription(category.description || "");
                           setEditImageUrl(category.image || "");
                         }}
                       >
@@ -262,20 +288,44 @@ export default function Categories() {
         )}
       </CardContent>
 
-      {/* Inline Edit Image Dialog with overflow fixed */}
-      <Dialog open={!!editing} onOpenChange={(o) => { if (!o) { setEditing(null); setEditImageUrl(""); } }}>
+      {/* Inline Edit Category Dialog (name, description, image) */}
+      <Dialog open={!!editing} onOpenChange={(o) => { if (!o) { setEditing(null); setEditName(""); setEditDescription(""); setEditImageUrl(""); } }}>
         <DialogContent className="sm:max-w-lg w-[96vw] sm:w-auto p-0 overflow-hidden">
           {/* Scrollable container */}
           <div className="max-h-[80vh] overflow-y-auto">
             {/* Sticky header */}
             <DialogHeader className="sticky top-0 bg-white/90 backdrop-blur px-6 pt-6 pb-3 border-b">
-              <DialogTitle>Edit Category Image</DialogTitle>
+              <DialogTitle>Edit Category</DialogTitle>
             </DialogHeader>
 
             {/* Body */}
             <div className="p-6 space-y-4">
-              <div className="text-sm text-gray-600">
-                Updating image for: <span className="font-medium">{editing?.name}</span>
+              <div className="space-y-3">
+                <div className="text-sm text-gray-600">
+                  Updating category: <span className="font-medium">{editing?.name}</span>
+                </div>
+
+                {/* Name */}
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700">Category Name</label>
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="w-full px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+
+                {/* Description */}
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700">Description</label>
+                  <textarea
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 rounded-md border border-gray-300 resize-y focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -310,10 +360,10 @@ export default function Categories() {
 
             {/* Sticky footer */}
             <div className="sticky bottom-0 bg-white/90 backdrop-blur px-6 py-4 border-t flex justify-end gap-2">
-              <Button variant="outline" onClick={() => { setEditing(null); setEditImageUrl(""); }} disabled={editSaving || editUploading}>
+              <Button variant="outline" onClick={() => { setEditing(null); setEditName(""); setEditDescription(""); setEditImageUrl(""); }} disabled={editSaving || editUploading}>
                 Cancel
               </Button>
-              <Button onClick={saveEditedImage} disabled={!editImageUrl || editSaving || editUploading}>
+              <Button onClick={saveEditedCategory} disabled={editSaving || editUploading}>
                 {editSaving ? "Saving..." : "Save"}
               </Button>
             </div>

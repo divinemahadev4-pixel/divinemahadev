@@ -51,9 +51,9 @@ export default function Users() {
         <table className="min-w-full border">
           <thead>
             <tr className="bg-gray-100 dark:bg-black">
-
               <th className="p-2 border">Name</th>
               <th className="p-2 border">Email</th>
+              <th className="p-2 border">Phone</th>
               <th className="p-2 border">Role</th>
               <th className="p-2 border">Actions</th>
             </tr>
@@ -63,6 +63,7 @@ export default function Users() {
               <tr key={userItem._id}>
                 <td className="p-2 border">{userItem.firstName}</td>
                 <td className="p-2 border">{userItem.email}</td>
+                <td className="p-2 border">{userItem.phoneNo || userItem.phone || "-"}</td>
                 <td className="p-2 border">{userItem.role}</td>
                 <td className="p-2 border">
                   {user?.role === "superadmin" && userItem.role !== "admin" && (

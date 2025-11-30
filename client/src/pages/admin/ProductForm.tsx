@@ -20,20 +20,42 @@ interface ProductFormProps {
   onSubmit: (product: any) => void;
   categories: { id: string; name: string }[];
   cloudinaryOptions: { name: string; endpoint: string }[];
+  initialData?: {
+    name?: string;
+    description?: string;
+    price?: number | string;
+    discounted_price?: number | string | null;
+    categoryId?: string;
+    images?: string[];
+    isAvailable?: boolean;
+  } | null;
+  submitLabel?: string;
 }
 
 const ProductForm: React.FC<ProductFormProps> = ({
   onSubmit,
   categories,
   cloudinaryOptions,
+  initialData,
+  submitLabel,
 }) => {
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [price, setPrice] = useState("");
-  const [discountedPrice, setDiscountedPrice] = useState(""); // ⭐ NEW FIELD
-  const [category, setCategory] = useState(categories[0]?.id || "");
-  const [images, setImages] = useState<string[]>([]);
-  const [isAvailable, setIsAvailable] = useState(true);
+  const [name, setName] = useState(initialData?.name || "");
+  const [description, setDescription] = useState(initialData?.description || "");
+  const [price, setPrice] = useState(
+    initialData?.price !== undefined && initialData?.price !== null
+      ? String(initialData.price)
+      : ""
+  );
+  const [discountedPrice, setDiscountedPrice] = useState(
+    initialData?.discounted_price !== undefined && initialData?.discounted_price !== null
+      ? String(initialData.discounted_price)
+      : ""
+  );
+  const [category, setCategory] = useState(
+    initialData?.categoryId || categories[0]?.id || ""
+  );
+  const [images, setImages] = useState<string[]>(initialData?.images || []);
+  const [isAvailable, setIsAvailable] = useState(initialData?.isAvailable ?? true);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -75,7 +97,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
         name,
         description,
         price,
-        discounted_price: discountedPrice || null, // ⭐ SEND TO BACKEND
+        discounted_price: discountedPrice || null,
         category,
         images,
         isAvailable,
@@ -84,13 +106,21 @@ const ProductForm: React.FC<ProductFormProps> = ({
       await onSubmit(productData);
 
       // Reset form
-      setName("");
-      setDescription("");
-      setPrice("");
-      setDiscountedPrice(""); // ⭐ RESET
-      setCategory(categories[0]?.id || "");
-      setImages([]);
-      setIsAvailable(true);
+      setName(initialData?.name || "");
+      setDescription(initialData?.description || "");
+      setPrice(
+        initialData?.price !== undefined && initialData?.price !== null
+          ? String(initialData.price)
+          : ""
+      );
+      setDiscountedPrice(
+        initialData?.discounted_price !== undefined && initialData?.discounted_price !== null
+          ? String(initialData.discounted_price)
+          : ""
+      );
+      setCategory(initialData?.categoryId || categories[0]?.id || "");
+      setImages(initialData?.images || []);
+      setIsAvailable(initialData?.isAvailable ?? true);
     } finally {
       setLoading(false);
     }
@@ -225,10 +255,10 @@ const ProductForm: React.FC<ProductFormProps> = ({
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Adding Product...
+                {submitLabel || "Saving Product..."}
               </>
             ) : (
-              "Add Product"
+              submitLabel || "Add Product"
             )}
           </Button>
         </CardContent>

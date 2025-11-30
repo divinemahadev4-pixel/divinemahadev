@@ -13,6 +13,10 @@ const AddBannerSchema = Schema({
     Banner_public_id:{
         type:String,
         required:true
+    },
+    BannerLink:{
+        type:String,
+        default:""
     }
 },{ timestamps:true });
 

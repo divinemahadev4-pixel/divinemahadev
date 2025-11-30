@@ -194,8 +194,14 @@ export default function Products() {
             name: data.name,
             description: data.description,
             price: Number(data.price),
-            discounted_price: data.discounted_price ? Number(data.discounted_price) : null, // ⭐ ADD THIS
+            discounted_price: data.discounted_price ? Number(data.discounted_price) : null,
             hamperPrice: data.hamperPrice ? Number(data.hamperPrice) : null,
+            Product_category: data.category || productToEdit.Product_category,
+            Product_image: data.images || productToEdit.Product_image,
+            Product_available:
+              typeof data.isAvailable === "boolean"
+                ? data.isAvailable
+                : productToEdit.Product_available,
           },
           { withCredentials: true, headers: adminToken ? { Authorization: `Bearer ${adminToken}` } : {} }
         );
@@ -209,6 +215,12 @@ export default function Products() {
                   Product_discription: data.description,
                   Product_price: Number(data.price),
                   Hamper_price: data.hamperPrice ? Number(data.hamperPrice) : null,
+                  Product_category: data.category || p.Product_category,
+                  Product_image: data.images || p.Product_image,
+                  Product_available:
+                    typeof data.isAvailable === "boolean"
+                      ? data.isAvailable
+                      : p.Product_available,
                 }
               : p
           )
@@ -254,90 +266,7 @@ export default function Products() {
     return products.filter((p) => p.Product_available === isAvailable);
   }, [products, availabilityFilter]);
 
-  const AddEditForm = ({
-    initialData,
-    onSubmit,
-  }: {
-    initialData?: ProductType | null;
-    onSubmit: (data: any) => void;
-  }) => {
-    const [name, setName] = useState(initialData?.Product_name || "");
-    const [description, setDescription] = useState(
-      initialData?.Product_discription || ""
-    );
-    const [price, setPrice] = useState(initialData?.Product_price || 0);
-    const [hamperPrice, setHamperPrice] = useState<string>(
-      initialData?.Hamper_price != null ? String(initialData.Hamper_price) : ""
-    );
-
-    const handleSubmit = (e: React.FormEvent) => {
-      e.preventDefault();
-      onSubmit({
-        name,
-        description,
-        price,
-        hamperPrice: hamperPrice === "" ? null : Number(hamperPrice),
-      });
-    };
-
-    return (
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-6 p-4 rounded-lg shadow-md dark:shadow-none bg-white dark:bg-gray-800"
-      >
-        <div className="flex flex-col">
-          <label className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">
-            Product Name
-          </label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400"
-            required
-          />
-        </div>
-
-        <div className="flex flex-col">
-          <label className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">
-            Product Description
-          </label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={4}
-            className="px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 resize-none"
-            required
-          />
-        </div>
-
-        <div className="flex flex-col sm:flex-row sm:space-x-4">
-          <div className="flex flex-col flex-1">
-            <label className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">
-              Regular Price
-            </label>
-            <input
-              type="number"
-              min={0}
-              value={price}
-              onChange={(e) => setPrice(Number(e.target.value))}
-              className="px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400"
-              required
-            />
-          </div>
-
-          
-        </div>
-
-        <Button
-          type="submit"
-          className="w-full bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 text-white font-semibold rounded-md py-2 transition-all"
-        >
-          {initialData ? "Update Product" : "Add Product"}
-        </Button>
-      </form>
-    );
-  };
+  // ProductForm is used for both add and edit
 
   return (
     <Card>
@@ -395,20 +324,30 @@ export default function Products() {
                 </DialogDescription>
               </DialogHeader>
 
-              {productToEdit ? (
-                <AddEditForm
-                  initialData={productToEdit}
-                  onSubmit={handleProductSubmit}
-                />
-              ) : (
-                <ProductForm
-                  onSubmit={handleProductSubmit}
-                  categories={categories}
-                  cloudinaryOptions={[
-                    { name: "Primary Cloud", endpoint: "/api/admin/getsignature" },
-                  ]}
-                />
-              )}
+              <ProductForm
+                onSubmit={handleProductSubmit}
+                categories={categories}
+                cloudinaryOptions={[
+                  { name: "Primary Cloud", endpoint: "/api/admin/getsignature" },
+                ]}
+                initialData={
+                  productToEdit
+                    ? {
+                        name: productToEdit.Product_name,
+                        description: productToEdit.Product_discription,
+                        price: productToEdit.Product_price,
+                        discounted_price: (productToEdit as any).discounted_price ?? null,
+                        categoryId:
+                          productToEdit.Product_category?.id ||
+                          productToEdit.Product_category?._id ||
+                          productToEdit.Product_category?.category,
+                        images: productToEdit.Product_image,
+                        isAvailable: productToEdit.Product_available,
+                      }
+                    : undefined
+                }
+                submitLabel={productToEdit ? "Update Product" : "Add Product"}
+              />
 
               <DialogClose asChild>
                 <Button variant="outline" className="mt-4 w-full">

@@ -1,5 +1,6 @@
 // src/pages/ProductDetailPage.tsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+
 import { useParams, Link, useNavigate } from "react-router-dom";
 import axiosInstance from "@/utils/axiosConfig";
 import {
@@ -80,6 +81,8 @@ const ProductDetailPage: React.FC = () => {
   const [product, setProduct] = useState<Product | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const thumbContainerRef = useRef<HTMLDivElement | null>(null);
+
   const [quantity, setQuantity] = useState<number>(1);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("description");
@@ -573,7 +576,7 @@ const ProductDetailPage: React.FC = () => {
     );
   };
 
-  // FIXED: Product_price is selling price, discounted_price is MRP (original/higher price)
+  // FIXED: Product_price is selling price, discounted_price is MRP
   const hasDiscount = product?.discounted_price && product.discounted_price > product.Product_price;
   const sellingPrice = product?.Product_price || 0; // Selling price (lower)
   const displayPrice = sellingPrice; // Display selling price
@@ -586,6 +589,13 @@ const ProductDetailPage: React.FC = () => {
   const codPayableTotal = Math.max(1, Math.round(lineTotal));
   const onlinePayableTotal = Math.max(1, codPayableTotal - 50);
   const overallCheckoutLoading = checkoutLoading || directCheckoutLoading;
+
+  const scrollThumbnails = (direction: "left" | "right") => {
+    const container = thumbContainerRef.current;
+    if (!container) return;
+    const scrollAmount = direction === "left" ? -180 : 180;
+    container.scrollBy({ left: scrollAmount, behavior: "smooth" });
+  };
 
   // ---- Render ----
   if (loading) {
@@ -668,7 +678,16 @@ const ProductDetailPage: React.FC = () => {
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
               <Card className="overflow-hidden border border-amber-200 shadow-lg bg-white">
                 <div className="relative group aspect-square bg-gradient-to-br from-white via-amber-50 to-amber-100">
-                  <motion.img src={selectedImage!} alt={product.Product_name} className="w-full h-full object-cover cursor-zoom-in" onError={(e) => (e.currentTarget.src = "/fallback.jpg")} onClick={() => setShowImageModal(true)} whileHover={{ scale: 1.02 }} transition={{ duration: 0.3 }} />
+                  <motion.img
+                    src={selectedImage!}
+                    alt={product.Product_name}
+                    className="w-full h-full object-cover cursor-zoom-in"
+                    onError={(e) => (e.currentTarget.src = "/fallback.jpg")}
+                    onClick={() => setShowImageModal(true)}
+                    whileHover={{ scale: 1.02 }}
+                    transition={{ duration: 0.3 }}
+                  />
+
                   <div className="absolute top-3 left-3 flex flex-col gap-2">
                     {hasDiscount && <Badge className="mb-3 bg-amber-100 text-amber-800 border-0 font-semibold">{discountPercentage}% OFF</Badge>}
                     {product.isNew && <Badge className="bg-gradient-to-r from-emerald-500 to-green-500 text-white font-semibold px-2 py-1 text-xs shadow-lg border-0"><Sparkles size={10} className="mr-1" />NEW</Badge>}
@@ -685,44 +704,55 @@ const ProductDetailPage: React.FC = () => {
                 </div>
               </Card>
 
-              {/* Mobile: horizontal scroll thumbnails */}
-              <div className="flex md:hidden gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory">
-                {product.Product_image.map((img, idx) => (
-                  <Card
-                    key={idx}
-                    className={`snap-start min-w-[5.5rem] max-w-[5.5rem] overflow-hidden cursor-pointer border-2 transition-all duration-300 hover:scale-105 ${selectedImage === img ? "border-amber-400 ring-2 ring-amber-200 shadow-lg" : "border-amber-200 hover:border-amber-300"}`}
-                    onClick={() => setSelectedImage(img)}
-                  >
-                    <div className="aspect-square bg-gradient-to-br from-amber-50 to-amber-100">
-                      <img
-                        src={img}
-                        alt={`View ${idx + 1}`}
-                        className="w-full h-full object-cover"
-                        onError={(e) => (e.currentTarget.src = "/fallback.jpg")}
-                      />
-                    </div>
-                  </Card>
-                ))}
-              </div>
+              {/* Thumbnails: horizontal slider with scroll + arrows */}
+              <div className="relative">
+                <div
+                  ref={thumbContainerRef}
+                  className="flex gap-3 overflow-x-auto pb-3 mb-2 px-3 sm:px-4 snap-x snap-mandatory"
+                  style={{ WebkitOverflowScrolling: "touch" }}
+                >
 
-              {/* Desktop: 4-column grid thumbnails */}
-              <div className="hidden md:grid grid-cols-4 gap-3">
-                {product.Product_image.map((img, idx) => (
-                  <Card
-                    key={idx}
-                    className={`overflow-hidden cursor-pointer border-2 transition-all duration-300 hover:scale-105 ${selectedImage === img ? "border-amber-400 ring-2 ring-amber-200 shadow-lg" : "border-amber-200 hover:border-amber-300"}`}
-                    onClick={() => setSelectedImage(img)}
-                  >
-                    <div className="aspect-square bg-gradient-to-br from-amber-50 to-amber-100">
-                      <img
-                        src={img}
-                        alt={`View ${idx + 1}`}
-                        className="w-full h-full object-cover"
-                        onError={(e) => (e.currentTarget.src = "/fallback.jpg")}
-                      />
-                    </div>
-                  </Card>
-                ))}
+                  {product.Product_image.map((img, idx) => (
+                    <Card
+                      key={idx}
+                      className={`snap-start flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24 overflow-hidden cursor-pointer border-2 transition-all duration-300 hover:scale-105 ${
+                        selectedImage === img
+                          ? "border-amber-400 ring-2 ring-amber-200 shadow-lg"
+                          : "border-amber-200 hover:border-amber-300"
+                      }`}
+                      onClick={() => setSelectedImage(img)}
+                    >
+                      <div className="w-full h-full bg-gradient-to-br from-amber-50 to-amber-100">
+                        <img
+                          src={img}
+                          alt={`View ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                          onError={(e) => (e.currentTarget.src = "/fallback.jpg")}
+                        />
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+
+                {/* Arrow controls (hidden if few images) */}
+                {product.Product_image.length > 3 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => scrollThumbnails("left")}
+                      className="hidden sm:flex absolute inset-y-0 left-0 my-auto -ml-1 w-7 h-7 items-center justify-center rounded-full bg-white/90 border border-amber-200 shadow-sm text-amber-700 hover:bg-amber-50"
+                    >
+                      <ChevronRight className="w-4 h-4 rotate-180" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => scrollThumbnails("right")}
+                      className="hidden sm:flex absolute inset-y-0 right-0 my-auto -mr-1 w-7 h-7 items-center justify-center rounded-full bg-white/90 border border-amber-200 shadow-sm text-amber-700 hover:bg-amber-50"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
               </div>
 
             </motion.div>
@@ -818,8 +848,11 @@ const ProductDetailPage: React.FC = () => {
                         {[
                           { label: "Category", value: product.Product_category.category },
                           { label: "Material", value: "Sacred Materials" },
-                          { label: "Warranty", value: "2 Years" },
-                          { label: "Return Policy", value: "30 Days" }
+                          { label: "Warranty", value: "6 Months" },
+                          {
+                            label: "Return Policy",
+                            value: "No refund/return, except if damaged within 24 hours with proof"
+                          }
                         ].map((spec, idx) => (
                           <div
                             key={idx}

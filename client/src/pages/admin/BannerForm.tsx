@@ -22,7 +22,12 @@ const BannerForm: React.FC<BannerFormProps> = ({ onSubmit, cloudinaryOptions }) 
     e.preventDefault();
     setLoading(true);
     try {
-      await onSubmit({ BannerUrl: image, BannerTitle: title, Banner_public_id: publicId || image });
+      await onSubmit({
+        BannerUrl: image,
+        BannerTitle: title,
+        Banner_public_id: publicId || image,
+        BannerLink: link || "",
+      });
     } finally {
       setLoading(false);
     }
