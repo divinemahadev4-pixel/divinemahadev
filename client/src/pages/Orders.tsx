@@ -582,12 +582,7 @@ const Orders = () => {
               {/* Status checkpoints timeline (like Amazon) */}
               {(() => {
                 const st = orderStatus[selectedOrder.status];
-                const steps: OrderState[] = [
-                  "pending",
-                  "processing",
-                  "shipped",
-                  "delivered",
-                ];
+                const steps: OrderState[] = ["pending", "processing", "shipped", "delivered"];
 
                 const currentRaw = selectedOrder.status as OrderState;
                 const currentIndex = (() => {
@@ -597,56 +592,52 @@ const Orders = () => {
                   return 0;
                 })();
 
+                const progressPercent =
+                  steps.length > 1 ? (currentIndex / (steps.length - 1)) * 100 : 0;
+
                 return (
                   <div className="space-y-2">
-                    <div className="flex justify-between text-[11px] text-orange-700">
-                      <span>Order Status</span>
-                      <span className="capitalize">{st.label}</span>
+                    <div className="flex items-center justify-between text-[11px] text-orange-700 px-0.5">
+                      <span className="font-medium">Order Status</span>
+                      <span className="capitalize font-semibold">{st.label}</span>
                     </div>
 
                     {/* Dots + connecting lines */}
-                    <div className="flex items-center justify-between gap-1">
-                      {steps.map((step, idx) => {
-                        const isCompleted = idx < currentIndex;
-                        const isActive = idx === currentIndex;
+                    <div className="mt-1 relative">
+                      <div className="absolute left-[12.5%] right-[12.5%] top-3 h-0.5 bg-orange-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-orange-500 transition-all duration-300"
+                          style={{ width: `${progressPercent}%` }}
+                        />
+                      </div>
 
-                        const circleClasses = isCompleted
-                          ? "bg-orange-500 border-orange-500 text-white"
-                          : isActive
-                          ? "bg-white border-orange-500 text-orange-600"
-                          : "bg-white border-orange-200 text-orange-300";
+                      {/* Step labels */}
+                      <div className="relative grid grid-cols-4 gap-0 text-center">
+                        {steps.map((step, idx) => {
+                          const isDelivered = currentRaw === "delivered";
+                          const isCompleted = isDelivered ? idx <= currentIndex : idx < currentIndex;
+                          const isActive = !isDelivered && idx === currentIndex;
 
-                        return (
-                          <div key={step} className="flex items-center w-full">
-                            <div
-                              className={`flex items-center justify-center w-6 h-6 rounded-full border text-[11px] font-semibold shadow-sm ${circleClasses}`}
-                            >
-                              {idx + 1}
-                            </div>
-                            {idx < steps.length - 1 && (
+                          const circleClasses = isCompleted
+                            ? "bg-orange-500 border-orange-500 text-white"
+                            : isActive
+                            ? "bg-white border-orange-500 text-orange-600"
+                            : "bg-white border-orange-200 text-orange-300";
+
+                          return (
+                            <div key={step} className="flex flex-col items-center gap-1 py-1">
                               <div
-                                className={`flex-1 h-0.5 mx-1 rounded-full ${
-                                  idx < currentIndex
-                                    ? "bg-orange-500"
-                                    : "bg-orange-100"
-                                }`}
-                              />
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Step labels */}
-                    <div className="flex justify-between mt-1 text-[10px] text-orange-700">
-                      {steps.map((step) => (
-                        <span
-                          key={step}
-                          className="flex-1 text-center capitalize px-0.5"
-                        >
-                          {orderStatus[step].label}
-                        </span>
-                      ))}
+                                className={`relative z-10 flex items-center justify-center w-6 h-6 rounded-full border text-[11px] font-semibold shadow-sm ${circleClasses}`}
+                              >
+                                {idx + 1}
+                              </div>
+                              <span className="text-[10px] text-orange-700 capitalize">
+                                {orderStatus[step].label}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
 
                     {(currentRaw === "cancelled" || currentRaw === "failed") && (
@@ -682,14 +673,18 @@ const Orders = () => {
                     <p className="font-semibold uppercase">
                       {selectedOrder.paymentMethod === "cod" ? "Cash on Delivery" : "Online Payment"}
                     </p>
-                    <p className="text-[10px] text-orange-600">Payment status: {selectedOrder.paymentStatus}</p>
+                    <p className="text-[10px] text-orange-600">
+                      Payment status: {selectedOrder.paymentStatus}
+                    </p>
                   </div>
                 </div>
               </div>
 
               {/* Items */}
               <div>
-                <p className="text-xs font-semibold text-orange-700 mb-2">Items ({selectedOrder.items.length})</p>
+                <p className="text-xs font-semibold text-orange-700 mb-2">
+                  Items ({selectedOrder.items.length})
+                </p>
                 <div className="space-y-2">
                   {selectedOrder.items.map((item, idx) => {
                     let name = item.name;
@@ -715,7 +710,9 @@ const Orders = () => {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold text-orange-900 truncate">{name || "Item"}</p>
+                          <p className="text-xs font-semibold text-orange-900 truncate">
+                            {name || "Item"}
+                          </p>
                           <p className="text-[11px] text-orange-600">Qty: {item.quantity}</p>
                         </div>
                         <div className="text-right text-xs text-orange-800 font-semibold">
