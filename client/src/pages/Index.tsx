@@ -10,6 +10,7 @@ import ScrollZoomHero from "@/components/ScrollZoomHero";
 import image1 from "../utils/image1.jpg"
 import image2 from "../utils/image2.jpg"
 import image_phone from "../utils/image_phone.jpg"
+import footer_image from "../utils/footer_image.png"
 
 const Index = () => {
   return (
@@ -25,21 +26,19 @@ const Index = () => {
 
         {/* Scroll-zoom hero image after Divine Collection */}
         <ScrollZoomHero
-          imageSrc={image2}
+          imageSrc={footer_image}
           mobileImageSrc={image_phone}
           alt="100+ products for your spiritual journey"
-          caption="100+ Products • Your one stop destination for spiritual needs"
         />
 
         <FeaturedProducts />
 
+        <AboutSection />
         {/* Second scroll-zoom hero image after Divine Products */}
         <ScrollZoomHero
-          imageSrc={image2}
+          imageSrc={footer_image}
           mobileImageSrc={image_phone}
-          caption="Curated divine products to guide your spiritual path"
         />
-        <AboutSection />
         <ServiceHighlights />
         <Footer />
       </div>

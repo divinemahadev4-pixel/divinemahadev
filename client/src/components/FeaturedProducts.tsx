@@ -479,7 +479,7 @@ const FeaturedProducts: React.FC = () => {
 
   return (
     <>
-      <section className="relative pt-12 md:pt-20 pb-0 md:pb-0 bg-white">
+      <section className="relative pt-4 md:pt-6 pb-0 md:pb-0 bg-white">
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6">
           <motion.header
             className="mb-10 text-center max-w-4xl mx-auto"
@@ -522,7 +522,11 @@ const FeaturedProducts: React.FC = () => {
                 size="sm"
                 variant={selectedCategory === cat.slug ? "default" : "outline"}
                 onClick={() => setSelectedCategory(cat.slug || "")}
-                className={`rounded-full whitespace-nowrap px-4 ${selectedCategory === cat.slug ? 'bg-orange-600 text-white' : 'border-gray-200 text-gray-600 hover:border-orange-300 hover:text-orange-700'}`}
+                className={`rounded-full whitespace-nowrap px-4 ${
+                  selectedCategory === cat.slug
+                    ? "bg-orange-600 text-white"
+                    : "border-gray-200 text-gray-600 hover:border-orange-300 hover:text-orange-700"
+                }`}
               >
                 {cat.name}
               </Button>

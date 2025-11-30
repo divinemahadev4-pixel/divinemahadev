@@ -75,19 +75,19 @@ const ScrollZoomHero: React.FC<ScrollZoomHeroProps> = ({ imageSrc, mobileImageSr
   return (
     <section
       ref={containerRef}
-      // Added 'flex items-center justify-center' to ensure image stays perfectly centered
-      className="relative w-full md:h-screen overflow-hidden flex items-center justify-center py-6 md:py-10 bg-[#FFFBF7]"
+      className="relative w-full overflow-hidden py-2 md:py-3 bg-[#FFFBF7]"
     >
-      <div className="relative w-full h-full">
+      <div
+        className="relative w-full"
+        style={{ aspectRatio: "21 / 10" }}
+      >
         {/* Desktop image */}
         <img
           ref={desktopImgRef}
           src={imageSrc}
           alt={alt || "Hero image"}
           loading="eager"
-          // FIX: Changed 'object-cover' to 'object-contain'
-          // This guarantees the image is NEVER cropped, so text is always safe.
-          className="hidden md:block absolute inset-0 w-full h-full object-contain will-change-transform"
+          className="hidden md:block w-full h-full object-cover will-change-transform"
         />
 
         {/* Mobile image */}
@@ -96,9 +96,7 @@ const ScrollZoomHero: React.FC<ScrollZoomHeroProps> = ({ imageSrc, mobileImageSr
           src={mobileImageSrc || imageSrc}
           alt={alt || "Hero image"}
           loading="eager"
-          // FIX: Changed 'object-cover' to 'object-contain'
-          // This ensures the full mobile poster is seen, even on tall phones.
-          className="block md:hidden w-full h-auto object-contain will-change-transform"
+          className="block md:hidden w-full h-auto object-cover will-change-transform"
         />
 
         {caption && (
