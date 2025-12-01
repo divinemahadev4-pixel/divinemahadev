@@ -232,15 +232,27 @@ const TermsConditions = () => {
               <Mail className="w-5 h-5 text-white" />
               <div>
                 <p className="text-white/80 text-sm">Email</p>
-                <p className="font-semibold">divinemahakal.in@gmail.com</p>
+                <a
+                  href="mailto:divinemahakal.in@gmail.com"
+                  className="font-semibold underline decoration-white/40 hover:decoration-white"
+                >
+                  divinemahakal.in@gmail.com
+                </a>
               </div>
             </div>
             
             <div className="flex items-center gap-3">
               <Phone className="w-5 h-5 text-white" />
               <div>
-                <p className="text-white/80 text-sm">Phone</p>
-                <p className="font-semibold">+91 92014 11433</p>
+                <p className="text-white/80 text-sm">Phone / WhatsApp</p>
+                <a
+                  href="https://wa.me/919201411433"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold underline decoration-white/40 hover:decoration-white"
+                >
+                  +91 92014 11433
+                </a>
               </div>
             </div>
           </div>

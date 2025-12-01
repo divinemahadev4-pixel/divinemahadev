@@ -35,6 +35,9 @@ interface ProductFormProps {
     images?: string[];
     isAvailable?: boolean;
     colorVariants?: ColorVariant[];
+    material?: string;
+    warrantyMonths?: number | string | null;
+    returnPolicy?: string;
   } | null;
   submitLabel?: string;
 }
@@ -66,6 +69,13 @@ const ProductForm: React.FC<ProductFormProps> = ({
   const [colorVariants, setColorVariants] = useState<ColorVariant[]>(
     initialData?.colorVariants || []
   );
+  const [material, setMaterial] = useState(initialData?.material || "");
+  const [warrantyMonths, setWarrantyMonths] = useState(
+    initialData?.warrantyMonths !== undefined && initialData?.warrantyMonths !== null
+      ? String(initialData.warrantyMonths)
+      : ""
+  );
+  const [returnPolicy, setReturnPolicy] = useState(initialData?.returnPolicy || "");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -126,6 +136,9 @@ const ProductForm: React.FC<ProductFormProps> = ({
         images,
         isAvailable,
         colorVariants,
+        material,
+        warrantyMonths,
+        returnPolicy,
       };
 
       await onSubmit(productData);
@@ -147,6 +160,13 @@ const ProductForm: React.FC<ProductFormProps> = ({
       setImages(initialData?.images || []);
       setIsAvailable(initialData?.isAvailable ?? true);
       setColorVariants(initialData?.colorVariants || []);
+      setMaterial(initialData?.material || "");
+      setWarrantyMonths(
+        initialData?.warrantyMonths !== undefined && initialData?.warrantyMonths !== null
+          ? String(initialData.warrantyMonths)
+          : ""
+      );
+      setReturnPolicy(initialData?.returnPolicy || "");
     } finally {
       setLoading(false);
     }
@@ -226,6 +246,42 @@ const ProductForm: React.FC<ProductFormProps> = ({
               placeholder="Describe the product..."
               className="min-h-[100px] resize-y"
             />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="product-material">Material (optional)</Label>
+              <Input
+                id="product-material"
+                type="text"
+                value={material}
+                onChange={(e) => setMaterial(e.target.value)}
+                placeholder="e.g. Brass, Silver, Wood"
+                className="h-10"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="product-warranty">Warranty (months)</Label>
+              <Input
+                id="product-warranty"
+                type="number"
+                min={0}
+                value={warrantyMonths}
+                onChange={(e) => setWarrantyMonths(e.target.value)}
+                placeholder="e.g. 6"
+                className="h-10"
+              />
+            </div>
+            <div className="space-y-2 md:col-span-1">
+              <Label htmlFor="product-return-policy">Return Policy (optional)</Label>
+              <Textarea
+                id="product-return-policy"
+                value={returnPolicy}
+                onChange={(e) => setReturnPolicy(e.target.value)}
+                placeholder="e.g. No return, only replacement if damaged on delivery"
+                className="min-h-[60px] resize-y"
+              />
+            </div>
           </div>
 
           {/* Category */}

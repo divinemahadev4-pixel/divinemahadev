@@ -45,6 +45,9 @@ interface ProductType {
   isHamper_product: boolean;
   Product_public_id: string;
   colorVariants?: { colorName: string; colorCode?: string; imageIndexes: number[] }[];
+  material?: string;
+  warrantyMonths?: number | null;
+  returnPolicy?: string;
 }
 
 type AvailabilityFilter = "all" | "available" | "unavailable";
@@ -204,6 +207,9 @@ export default function Products() {
                 ? data.isAvailable
                 : productToEdit.Product_available,
             colorVariants: Array.isArray(data.colorVariants) ? data.colorVariants : productToEdit.colorVariants || [],
+            material: data.material ?? (productToEdit.material || ""),
+            warrantyMonths: data.warrantyMonths ? Number(data.warrantyMonths) : (productToEdit.warrantyMonths ?? null),
+            returnPolicy: data.returnPolicy ?? (productToEdit.returnPolicy || ""),
           },
           { withCredentials: true, headers: adminToken ? { Authorization: `Bearer ${adminToken}` } : {} }
         );
@@ -224,6 +230,9 @@ export default function Products() {
                       ? data.isAvailable
                       : p.Product_available,
                   colorVariants: Array.isArray(data.colorVariants) ? data.colorVariants : (p as any).colorVariants,
+                  material: data.material ?? ((p as any).material || ""),
+                  warrantyMonths: data.warrantyMonths ? Number(data.warrantyMonths) : (p as any).warrantyMonths,
+                  returnPolicy: data.returnPolicy ?? ((p as any).returnPolicy || ""),
                 }
               : p
           )
@@ -236,7 +245,7 @@ export default function Products() {
             Product_name: data.name,
             Product_discription: data.description,
             Product_price: Number(data.price),
-            discounted_price: data.discounted_price ? Number(data.discounted_price) : null, // ⭐ ADD THIS
+            discounted_price: data.discounted_price ? Number(data.discounted_price) : null,
             Hamper_price: data.hamperPrice ? Number(data.hamperPrice) : null,
             Product_image: data.images || [],
             Product_category: data.category || "",
@@ -244,6 +253,9 @@ export default function Products() {
             isHamper_product: data.isHamperProduct ?? false,
             Product_public_id: "",
             colorVariants: Array.isArray(data.colorVariants) ? data.colorVariants : [],
+            material: data.material || "",
+            warrantyMonths: data.warrantyMonths ? Number(data.warrantyMonths) : null,
+            returnPolicy: data.returnPolicy || "",
           },
           { withCredentials: true, headers: adminToken ? { Authorization: `Bearer ${adminToken}` } : {} }
         );
@@ -269,8 +281,6 @@ export default function Products() {
     const isAvailable = availabilityFilter === "available";
     return products.filter((p) => p.Product_available === isAvailable);
   }, [products, availabilityFilter]);
-
-  // ProductForm is used for both add and edit
 
   return (
     <Card>
@@ -348,6 +358,9 @@ export default function Products() {
                         images: productToEdit.Product_image,
                         isAvailable: productToEdit.Product_available,
                         colorVariants: (productToEdit as any).colorVariants || [],
+                        material: (productToEdit as any).material || "",
+                        warrantyMonths: (productToEdit as any).warrantyMonths ?? "",
+                        returnPolicy: (productToEdit as any).returnPolicy || "",
                       }
                     : undefined
                 }
@@ -395,23 +408,34 @@ export default function Products() {
                 {filteredProducts.map((product) => (
                   <TableRow key={product._id}>
                     <TableCell>
-                      <div className="flex flex-col">
-                        <span className="font-medium text-gray-900 dark:text-gray-100">
-                          {product.Product_name}
-                        </span>
-                        <span className="text-xs text-gray-500 dark:text-gray-300 truncate max-w-[200px]">
-                          {product.Product_discription}
-                        </span>
-                        <Badge
-                          variant="secondary"
-                          className={`mt-1 text-xs w-24 flex justify-center ${
-                            product.Product_available
-                              ? "bg-green-100 text-green-700"
-                              : "bg-red-100 text-red-700"
-                          }`}
-                        >
-                          {product.Product_available ? "Available" : "Unavailable"}
-                        </Badge>
+                      <div className="flex items-center gap-3">
+                        {Array.isArray(product.Product_image) && product.Product_image[0] && (
+                          <div className="w-12 h-12 rounded-md overflow-hidden border border-gray-200 bg-gray-50 flex-shrink-0">
+                            <img
+                              src={product.Product_image[0]}
+                              alt={product.Product_name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
+                        <div className="flex flex-col">
+                          <span className="font-medium text-gray-900 dark:text-gray-100">
+                            {product.Product_name}
+                          </span>
+                          <span className="text-xs text-gray-500 dark:text-gray-300 truncate max-w-[200px]">
+                            {product.Product_discription}
+                          </span>
+                          <Badge
+                            variant="secondary"
+                            className={`mt-1 text-xs w-24 flex justify-center ${
+                              product.Product_available
+                                ? "bg-green-100 text-green-700"
+                                : "bg-red-100 text-red-700"
+                            }`}
+                          >
+                            {product.Product_available ? "Available" : "Unavailable"}
+                          </Badge>
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>

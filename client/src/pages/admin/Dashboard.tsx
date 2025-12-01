@@ -483,11 +483,72 @@ export default function Dashboard() {
       ? orders
       : orders.filter((o) => o.status?.toLowerCase() === statusFilter);
 
+  const totalOrders = orders.length;
+  const pendingOrders = orders.filter((o) => o.status?.toLowerCase() === "pending").length;
+  const processingOrders = orders.filter((o) => o.status?.toLowerCase() === "processing").length;
+  const shippedOrders = orders.filter((o) => o.status?.toLowerCase() === "shipped").length;
+  const deliveredOrders = orders.filter((o) => o.status?.toLowerCase() === "delivered" || o.status?.toLowerCase() === "completed").length;
+  const cancelledOrders = orders.filter((o) => o.status?.toLowerCase() === "cancelled" || o.status?.toLowerCase() === "failed").length;
+
   return (
     <div className="space-y-6 p-6">
       {/* Dashboard Cards */}
-      <div className="grid gap-6 md:grid-cols-3">
-        {/* Users Card */}
+      <div className="grid gap-6 md:grid-cols-3 xl:grid-cols-4">
+        <Card className="shadow-lg">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+            <Package className="w-4 h-4 text-gray-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalOrders}</div>
+            <p className="text-xs text-gray-500">All orders placed</p>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-lg">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
+            <Package className="w-4 h-4 text-yellow-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{pendingOrders}</div>
+            <p className="text-xs text-gray-500">Waiting to be processed</p>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-lg">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-sm font-medium">Processing / Shipped</CardTitle>
+            <Package className="w-4 h-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{processingOrders + shippedOrders}</div>
+            <p className="text-xs text-gray-500">Currently in transit or packing</p>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-lg">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-sm font-medium">Delivered Orders</CardTitle>
+            <Package className="w-4 h-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{deliveredOrders}</div>
+            <p className="text-xs text-gray-500">Successfully delivered</p>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-lg">
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-sm font-medium">Cancelled / Failed</CardTitle>
+            <Package className="w-4 h-4 text-red-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{cancelledOrders}</div>
+            <p className="text-xs text-gray-500">Cancelled or failed orders</p>
+          </CardContent>
+        </Card>
+
         <Card className="shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -499,21 +560,6 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Orders Card */}
-        <Card className="shadow-lg">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">Active Orders</CardTitle>
-            <Package className="w-4 h-4 text-gray-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {orders?.filter((o) => o?.status?.toLowerCase() === "pending").length || 0}
-            </div>
-            <p className="text-xs text-gray-500">Orders in progress</p>
-          </CardContent>
-        </Card>
-
-        {/* Carts Card */}
         <Card className="shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-sm font-medium">Active Carts</CardTitle>

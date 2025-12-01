@@ -59,6 +59,9 @@ interface Product {
   Product_rating?: number;
   isNew?: boolean;
   colorVariants?: ColorVariant[];
+  material?: string;
+  warrantyMonths?: number | null;
+  returnPolicy?: string;
 }
 
 interface Review {
@@ -1014,11 +1017,19 @@ const ProductDetailPage: React.FC = () => {
                       <div className="space-y-3">
                         {[
                           { label: "Category", value: product.Product_category.category },
-                          { label: "Material", value: "Sacred Materials" },
-                          { label: "Warranty", value: "6 Months" },
+                          { label: "Material", value: product.material || "Not specified" },
+                          {
+                            label: "Warranty",
+                            value:
+                              product.warrantyMonths && product.warrantyMonths > 0
+                                ? `${product.warrantyMonths} Months`
+                                : "No warranty",
+                          },
                           {
                             label: "Return Policy",
-                            value: "No refund/return, except if damaged within 24 hours with proof"
+                            value:
+                              product.returnPolicy ||
+                              "Refer to Refund & Return policy or product description",
                           }
                         ].map((spec, idx) => (
                           <div

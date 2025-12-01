@@ -29,6 +29,16 @@ const AddPostSchema = new Schema(
         type: String,
       },
     ],
+    material: {
+      type: String,
+    },
+    warrantyMonths: {
+      type: Number,
+      min: 0,
+    },
+    returnPolicy: {
+      type: String,
+    },
     Product_category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Category",

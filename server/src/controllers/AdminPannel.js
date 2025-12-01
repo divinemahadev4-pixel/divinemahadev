@@ -153,6 +153,9 @@ const SaveProduct = async (req, res) => {
       Product_discription: req.body.Product_discription,
       Product_price: req.body.Product_price,
       Product_image: req.body.Product_image || [],
+      material: req.body.material || "",
+      warrantyMonths: req.body.warrantyMonths ?? null,
+      returnPolicy: req.body.returnPolicy || "",
       Product_category: req.body.Product_category,
       Product_available: req.body.Product_available !== false,
       Product_public_id: req.body.Product_public_id || "undcnwe ic jwdn cjw ncjkw cjw",
@@ -572,6 +575,9 @@ const updateProduct = async (req, res) => {
       Product_image,
       Product_category,
       Product_available,
+      material,
+      warrantyMonths,
+      returnPolicy,
     } = req.body;
     const response = await Product.findById(id);
     if (!response) throw new Error("invalid product");
@@ -597,6 +603,19 @@ const updateProduct = async (req, res) => {
     // Update product images if provided (ensures colorVariants imageIndexes stay in sync)
     if (Array.isArray(Product_image) && Product_image.length > 0) {
       response.Product_image = Product_image;
+    }
+
+    // Update material / warranty / return policy if provided
+    if (typeof material === "string") {
+      response.material = material;
+    }
+
+    if (warrantyMonths !== undefined && warrantyMonths !== null) {
+      response.warrantyMonths = warrantyMonths;
+    }
+
+    if (typeof returnPolicy === "string") {
+      response.returnPolicy = returnPolicy;
     }
 
     // Optionally update category and availability if provided
