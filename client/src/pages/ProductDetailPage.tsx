@@ -1371,7 +1371,7 @@ const ProductDetailPage: React.FC = () => {
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className="w-16 h-16 rounded-lg overflow-hidden bg-amber-100 flex-shrink-0">
                       <img
-                        src={(directBuyProduct || product)?.Product_image[0] || selectedImage || "/fallback.jpg"}
+                        src={selectedImage || (directBuyProduct || product)?.Product_image[0] || "/fallback.jpg"}
                         alt={(directBuyProduct || product)?.Product_name || "Product"}
                         className="w-full h-full object-cover"
                         onError={(e) => (e.currentTarget.src = "/fallback.jpg")}
@@ -1396,6 +1396,44 @@ const ProductDetailPage: React.FC = () => {
                     )}
                     <p className="text-[11px] text-emerald-700 font-semibold">Free Delivery in 3–5 days</p>
                     <p className="text-[11px] text-gray-500">Inclusive of all taxes</p>
+                  </div>
+                </div>
+
+                <div className="bg-white/90 rounded-xl border border-amber-200 p-4">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3">Order Summary</h3>
+                  <div className="space-y-2 text-xs sm:text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Items total ({quantity} item{quantity > 1 ? "s" : ""})</span>
+                      <span className="font-medium text-gray-900">₹{lineTotal.toLocaleString()}</span>
+                    </div>
+                    {hasDiscount && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-600">You save on MRP</span>
+                        <span className="font-medium text-emerald-600">-₹{savings.toLocaleString()}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Delivery charges</span>
+                      <span className="font-medium text-emerald-600">Free</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Online payment discount</span>
+                      <span className="font-medium text-emerald-600">-₹{(codPayableTotal - onlinePayableTotal).toLocaleString()}</span>
+                    </div>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-dashed border-amber-200 space-y-1 text-xs sm:text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-gray-900">Payable on delivery (COD)</span>
+                      <span className="font-bold text-gray-900">₹{codPayableTotal.toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-gray-900">Payable now (Online)</span>
+                      <span className="font-bold text-emerald-700">₹{onlinePayableTotal.toLocaleString()}</span>
+                    </div>
+                    <p className="text-[11px] text-gray-500 mt-1 flex items-center gap-1">
+                      <Lock size={12} className="text-emerald-500" />
+                      100% secure payments. No extra charges on delivery.
+                    </p>
                   </div>
                 </div>
 
