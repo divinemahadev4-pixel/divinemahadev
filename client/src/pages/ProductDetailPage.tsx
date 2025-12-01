@@ -158,6 +158,9 @@ const ProductDetailPage: React.FC = () => {
   const phoneVerification = usePhoneVerification();
   const { checkoutLoading, processPayment } = usePaymentProcessing();
   const [directBuyProduct, setDirectBuyProduct] = useState<Product | null>(null);
+  const [pendingPaymentMethod, setPendingPaymentMethod] = useState<
+    "cod" | "online" | null
+  >(null);
 
   useEffect(() => {
     if (user && user.firstName) setNameInput(user.firstName);
@@ -260,9 +263,18 @@ const ProductDetailPage: React.FC = () => {
         ...prev,
         phone: phoneVerification.phoneNumber,
       }));
-      setIsCheckingOut(true);
+
+      if (pendingPaymentMethod && directBuyProduct) {
+        handleDirectBuyPayment(directBuyProduct, pendingPaymentMethod);
+        setPendingPaymentMethod(null);
+      }
     }
-  }, [phoneVerification.phoneVerified, phoneVerification.phoneNumber]);
+  }, [
+    phoneVerification.phoneVerified,
+    phoneVerification.phoneNumber,
+    pendingPaymentMethod,
+    directBuyProduct,
+  ]);
 
   // Utilities (wishlist/cart transforms)
   const transformProductForWishlist = (prod: Product) => ({
@@ -388,8 +400,63 @@ const ProductDetailPage: React.FC = () => {
 
     setBuying(true);
     setDirectBuyProduct(product);
-    phoneVerification.setShowPhoneVerification(true);
+    setIsCheckingOut(true);
     setTimeout(() => setBuying(false), 700);
+  };
+
+  const handleDirectBuyPaymentWithVerification = async (
+    paymentMethod: "cod" | "online"
+  ) => {
+    const buyProduct = directBuyProduct || product;
+    if (!buyProduct) return;
+
+    const requiredFields: (keyof ShippingAddress)[] = [
+      "fullName",
+      "address",
+      "city",
+      "state",
+      "pinCode",
+      "phone",
+    ];
+
+    const missingFields = requiredFields.filter(
+      (field) => !shippingAddress[field].trim()
+    );
+
+    if (missingFields.length > 0) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all shipping address fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!phoneVerification.phoneVerified) {
+      const cleanNumber = shippingAddress.phone.replace(/\D/g, "");
+      if (
+        !cleanNumber ||
+        cleanNumber.length !== 10 ||
+        (cleanNumber[0] !== "6" &&
+          cleanNumber[0] !== "7" &&
+          cleanNumber[0] !== "8" &&
+          cleanNumber[0] !== "9")
+      ) {
+        toast({
+          title: "Invalid Phone Number",
+          description: "Please enter a valid 10-digit phone number",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      phoneVerification.setPhoneNumber(cleanNumber);
+      phoneVerification.setShowPhoneVerification(true);
+      setPendingPaymentMethod(paymentMethod);
+      return;
+    }
+
+    await handleDirectBuyPayment(buyProduct, paymentMethod);
   };
 
   const handleDirectBuyPayment = async (
@@ -1073,7 +1140,7 @@ const ProductDetailPage: React.FC = () => {
                   {/* Review Stats */}
                   <div className="lg:col-span-1">
                     <div className="bg-amber-50 rounded-2xl p-4 sm:p-6 border border-amber-200">
-                      <h3 className="font-bold text-gray-900 text-base sm:text-lg mb-4">Review Summary</h3>
+                      <h3 className="text-sm font-semibold text-gray-900 mb-4">Review Summary</h3>
                       <div className="space-y-4">
                         <div className="flex flex-wrap items-center justify-between gap-3">
                           <span className="text-3xl sm:text-4xl font-bold text-amber-600">
@@ -1129,7 +1196,7 @@ const ProductDetailPage: React.FC = () => {
                           <input
                             value={nameInput}
                             onChange={(e) => setNameInput(e.target.value)}
-                            className="mt-2 w-full border border-amber-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                            className="mt-2 w-full border border-amber-200 rounded-lg px-3 py-2 text-sm focus-visible:ring-amber-500"
                             placeholder="Your name"
                           />
                         </div>
@@ -1145,7 +1212,7 @@ const ProductDetailPage: React.FC = () => {
                             value={reviewText}
                             onChange={(e) => setReviewText(e.target.value)}
                             rows={4}
-                            className="mt-2 w-full border border-amber-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                            className="mt-2 w-full border border-amber-200 rounded-lg px-3 py-2 text-sm focus-visible:ring-amber-500"
                             placeholder="Share your divine experience with this product..."
                           />
                         </div>
@@ -1387,11 +1454,20 @@ const ProductDetailPage: React.FC = () => {
                     </div>
                   </div>
                   <div className="text-right space-y-1">
-                    <p className="text-xs text-gray-500">Product total</p>
-                    <p className="text-xl font-bold text-gray-900">₹{lineTotal.toLocaleString()}</p>
+                    <p className="text-xs text-gray-500 font-medium">Price details</p>
                     {hasDiscount && (
-                      <p className="text-[11px] text-emerald-600 font-medium">
-                        MRP savings: ₹{savings.toLocaleString()} ({discountPercentage}% OFF)
+                      <p className="text-[11px] text-gray-400 line-through">
+                        MRP: ₹{(mrpPrice * quantity).toLocaleString()}
+                      </p>
+                    )}
+                    <p className="text-xl font-extrabold text-gray-900">
+                      ₹{lineTotal.toLocaleString()}
+                    </p>
+                    {hasDiscount && (
+                      <p className="inline-flex items-center justify-end gap-1 text-[11px] text-emerald-700 font-semibold">
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200">
+                          You save ₹{savings.toLocaleString()} ({discountPercentage}% OFF)
+                        </span>
                       </p>
                     )}
                     <p className="text-[11px] text-emerald-700 font-semibold">Free Delivery in 3–5 days</p>
@@ -1417,9 +1493,20 @@ const ProductDetailPage: React.FC = () => {
                       <span className="font-medium text-emerald-600">Free</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-600">Online payment discount</span>
+                      <span className="text-gray-700 font-medium">Online payment discount (Prepaid)</span>
                       <span className="font-medium text-emerald-600">-₹{(codPayableTotal - onlinePayableTotal).toLocaleString()}</span>
                     </div>
+                  </div>
+                  <div className="mt-3 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 flex items-center justify-between text-[11px] sm:text-xs">
+                    <div className="flex items-center gap-1 text-emerald-700 font-semibold">
+                      <CreditCard size={12} className="text-emerald-600" />
+                      <span>
+                        Pay online & get extra ₹{(codPayableTotal - onlinePayableTotal).toLocaleString()} OFF
+                      </span>
+                    </div>
+                    <span className="text-emerald-700 font-bold">
+                      Pay ₹{onlinePayableTotal.toLocaleString()} now
+                    </span>
                   </div>
                   <div className="mt-3 pt-3 border-t border-dashed border-amber-200 space-y-1 text-xs sm:text-sm">
                     <div className="flex items-center justify-between">
@@ -1427,7 +1514,12 @@ const ProductDetailPage: React.FC = () => {
                       <span className="font-bold text-gray-900">₹{codPayableTotal.toLocaleString()}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-gray-900">Payable now (Online)</span>
+                      <span className="font-semibold text-gray-900">
+                        Payable now (Online)
+                        <span className="ml-1 text-[11px] text-emerald-600 font-medium">
+                          (Save ₹{(codPayableTotal - onlinePayableTotal).toLocaleString()} extra)
+                        </span>
+                      </span>
                       <span className="font-bold text-emerald-700">₹{onlinePayableTotal.toLocaleString()}</span>
                     </div>
                     <p className="text-[11px] text-gray-500 mt-1 flex items-center gap-1">
@@ -1458,9 +1550,9 @@ const ProductDetailPage: React.FC = () => {
                         type="text"
                         name="phone"
                         value={shippingAddress.phone}
-                        disabled
-                        className="mt-1 w-full border border-amber-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500"
-                        placeholder="Verified phone number"
+                        onChange={handleShippingInputChange}
+                        className="mt-1 w-full border border-amber-200 rounded-lg px-3 py-2 text-sm focus-visible:ring-amber-500"
+                        placeholder="Enter 10-digit phone number"
                       />
                     </div>
                     <div className="space-y-1 sm:col-span-2">
@@ -1515,7 +1607,9 @@ const ProductDetailPage: React.FC = () => {
               <div className="flex-shrink-0 bg-white border-t border-amber-200 px-6 py-4 flex flex-col sm:flex-row gap-3">
                 <Button
                   type="button"
-                  onClick={() => handleDirectBuyPayment((directBuyProduct || product)!, "online")}
+                  onClick={() =>
+                    handleDirectBuyPaymentWithVerification("online")
+                  }
                   disabled={overallCheckoutLoading}
                   className="flex-1 h-11 text-sm font-semibold rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg hover:from-emerald-700 hover:to-green-700"
                 >
@@ -1538,7 +1632,9 @@ const ProductDetailPage: React.FC = () => {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => handleDirectBuyPayment((directBuyProduct || product)!, "cod")}
+                  onClick={() =>
+                    handleDirectBuyPaymentWithVerification("cod")
+                  }
                   disabled={overallCheckoutLoading}
                   className="flex-1 h-11 text-sm font-semibold rounded-xl border-2 border-amber-600 text-amber-700 hover:bg-amber-600 hover:text-white shadow-lg"
                 >

@@ -624,4 +624,3 @@ export const useCart = (): CartContextType => {
   }
   return ctx;
 };
-
