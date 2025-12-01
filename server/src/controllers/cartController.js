@@ -420,9 +420,23 @@ const getCart = async (req, res) => {
 // Add product to cart (normal products only)
 const addToCart = async (req, res) => {
   try {
-    const { productId, quantity = 1 } = req.body;
+    const {
+      productId,
+      quantity = 1,
+      variantIndex,
+      colorName,
+      colorCode,
+      image,
+    } = req.body;
 
-    console.log('🔍 Add to cart request:', { productId, quantity, userId: req.user._id });
+    console.log('🔍 Add to cart request:', {
+      productId,
+      quantity,
+      variantIndex,
+      colorName,
+      colorCode,
+      userId: req.user._id,
+    });
 
     // Validate productId format
     const mongoose = require('mongoose');
@@ -460,19 +474,41 @@ if (product.isHamper_product) {
       cart = await Cart.create({ userId: req.user._id, items: [] });
     }
 
-    // Check if product is already in cart
-    const existingItemIndex = cart.items.findIndex(
-      item => item.productId.toString() === productId
-    );
+    // Check if product (and variant, if any) is already in cart
+    const existingItemIndex = cart.items.findIndex((item) => {
+      if (item.productId.toString() !== productId) return false;
+
+      const existingVariantIndex =
+        typeof item.variantIndex === 'number' ? item.variantIndex : null;
+      const incomingVariantIndex =
+        typeof variantIndex === 'number' ? variantIndex : null;
+
+      if (existingVariantIndex !== incomingVariantIndex) return false;
+
+      const existingColorName = item.colorName || '';
+      const incomingColorName = colorName || '';
+      const existingColorCode = item.colorCode || '';
+      const incomingColorCode = colorCode || '';
+
+      return (
+        existingColorName === incomingColorName &&
+        existingColorCode === incomingColorCode
+      );
+    });
 
     if (existingItemIndex > -1) {
-      // Update quantity if product exists
+      // Update quantity if same product + variant exists
       cart.items[existingItemIndex].quantity += quantity;
     } else {
-      // Add new product to cart
+      // Add new product (or variant) to cart
       cart.items.push({
         productId: productId,
-        quantity: quantity
+        quantity: quantity,
+        variantIndex:
+          typeof variantIndex === 'number' ? variantIndex : null,
+        colorName: colorName,
+        colorCode: colorCode,
+        image: image,
       });
     }
 
@@ -676,16 +712,37 @@ const syncCart = async (req, res) => {
         continue;
       }
 
-      const existingItemIndex = cart.items.findIndex(
-        item => item.productId.toString() === localItem.id
-      );
+      const incomingVariantIndex =
+        typeof localItem.variantIndex === 'number' ? localItem.variantIndex : null;
+      const incomingColorName = localItem.colorName || '';
+      const incomingColorCode = localItem.colorCode || '';
+
+      const existingItemIndex = cart.items.findIndex((item) => {
+        if (item.productId.toString() !== localItem.id) return false;
+
+        const existingVariantIndex =
+          typeof item.variantIndex === 'number' ? item.variantIndex : null;
+        if (existingVariantIndex !== incomingVariantIndex) return false;
+
+        const existingColorName = item.colorName || '';
+        const existingColorCode = item.colorCode || '';
+
+        return (
+          existingColorName === incomingColorName &&
+          existingColorCode === incomingColorCode
+        );
+      });
 
       if (existingItemIndex > -1) {
         cart.items[existingItemIndex].quantity += localItem.quantity || 1;
       } else {
         cart.items.push({
           productId: localItem.id,
-          quantity: localItem.quantity || 1
+          quantity: localItem.quantity || 1,
+          variantIndex: incomingVariantIndex,
+          colorName: localItem.colorName,
+          colorCode: localItem.colorCode,
+          image: localItem.image,
         });
       }
     }

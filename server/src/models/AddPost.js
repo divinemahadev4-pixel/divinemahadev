@@ -43,8 +43,25 @@ const AddPostSchema = new Schema(
       type: String,
       required: true,
     },
+    colorVariants: [
+      {
+        colorName: {
+          type: String,
+          required: true,
+        },
+        colorCode: {
+          type: String,
+        },
+        imageIndexes: [
+          {
+            type: Number,
+            min: 0,
+          },
+        ],
+      },
+    ],
     Product_slug: {
-      type: String, 
+      type: String,
       index: true,
     }
   },

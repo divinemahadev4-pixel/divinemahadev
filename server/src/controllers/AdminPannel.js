@@ -158,6 +158,10 @@ const SaveProduct = async (req, res) => {
       Product_public_id: req.body.Product_public_id || "undcnwe ic jwdn cjw ncjkw cjw",
       Product_slug: category.slug,
       discounted_price: finalDiscountedPrice,
+      // Optional color variants for per-color images
+      colorVariants: Array.isArray(req.body.colorVariants)
+        ? req.body.colorVariants
+        : [],
     });
 
     const savedProduct = await newProduct.save();
@@ -557,7 +561,18 @@ const updateCategory = async (req, res) => {
 const updateProduct = async (req, res) => {
   try {
 
-    const { id, name, description, price, hamperPrice, discounted_price } = req.body;
+    const {
+      id,
+      name,
+      description,
+      price,
+      hamperPrice,
+      discounted_price,
+      colorVariants,
+      Product_image,
+      Product_category,
+      Product_available,
+    } = req.body;
     const response = await Product.findById(id);
     if (!response) throw new Error("invalid product");
 
@@ -572,6 +587,25 @@ const updateProduct = async (req, res) => {
     } else {
       // If not provided, keep existing or set to Product_price
       response.discounted_price = response.discounted_price || Number(price);
+    }
+
+    // Update optional color variants if provided
+    if (Array.isArray(colorVariants)) {
+      response.colorVariants = colorVariants;
+    }
+
+    // Update product images if provided (ensures colorVariants imageIndexes stay in sync)
+    if (Array.isArray(Product_image) && Product_image.length > 0) {
+      response.Product_image = Product_image;
+    }
+
+    // Optionally update category and availability if provided
+    if (Product_category) {
+      response.Product_category = Product_category;
+    }
+
+    if (typeof Product_available === "boolean") {
+      response.Product_available = Product_available;
     }
 
     console.log('🔍 Product Update - Prices:', {

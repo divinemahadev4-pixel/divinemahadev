@@ -20,6 +20,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onUpload, cloudinaryOptio
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Unique id per uploader instance so labels trigger the correct input
+  const inputIdRef = useRef<string>(`image-upload-${Math.random().toString(36).slice(2)}`);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
@@ -131,10 +133,10 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onUpload, cloudinaryOptio
           onChange={handleFileChange}
           disabled={uploading}
           className="hidden"
-          id="category-image-upload"
+          id={inputIdRef.current}
         />
         <label
-          htmlFor="category-image-upload"
+          htmlFor={inputIdRef.current}
           className={`
             flex items-center justify-center w-full h-32 px-6 py-4
             border-2 border-dashed border-input rounded-md cursor-pointer

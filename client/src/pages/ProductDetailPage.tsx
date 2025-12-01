@@ -38,6 +38,12 @@ import { usePhoneVerification } from "@/hooks/usePhoneVerification";
 import { usePaymentProcessing } from "@/hooks/usePaymentProcessing";
 import PhoneVerificationModal from "@/components/PhoneVerificationModal";
 
+interface ColorVariant {
+  colorName: string;
+  colorCode?: string;
+  imageIndexes?: number[];
+}
+
 interface Product {
   _id: string;
   Product_name: string;
@@ -52,6 +58,7 @@ interface Product {
   Product_available?: boolean;
   Product_rating?: number;
   isNew?: boolean;
+  colorVariants?: ColorVariant[];
 }
 
 interface Review {
@@ -81,6 +88,7 @@ const ProductDetailPage: React.FC = () => {
   const [product, setProduct] = useState<Product | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedVariantIndex, setSelectedVariantIndex] = useState<number | null>(null);
   const thumbContainerRef = useRef<HTMLDivElement | null>(null);
 
   const [quantity, setQuantity] = useState<number>(1);
@@ -175,15 +183,25 @@ const ProductDetailPage: React.FC = () => {
       try {
         const res = await axiosInstance.get(`/api/getproductbyid?id=${productId?.trim()}`);
         if (res.data?.product) {
-          setProduct(res.data.product);
-          setSelectedImage(res.data.product.Product_image[0]);
+          const fetchedProduct: Product = res.data.product;
+          setProduct(fetchedProduct);
+
+          // Initialize image & color variant selection
+          // Start with base product image only; variants are applied only after user selects a color
+          const baseImages = Array.isArray(fetchedProduct.Product_image)
+            ? fetchedProduct.Product_image
+            : [];
+
+          setSelectedVariantIndex(null);
+          setSelectedImage(baseImages[0] || null);
+
           // fetch related products
           try {
             const relatedRes = await axiosInstance.get(
-              `/api/getproducts?category=${res.data.product.Product_category.slug}&limit=8`
+              `/api/getproducts?category=${fetchedProduct.Product_category.slug}&limit=8`
             );
             const filtered = relatedRes.data.products?.filter(
-              (p: Product) => p._id !== res.data.product._id
+              (p: Product) => p._id !== fetchedProduct._id
             ) || [];
             setRelatedProducts(filtered.slice(0, 6));
           } catch (relatedError) {
@@ -256,6 +274,23 @@ const ProductDetailPage: React.FC = () => {
 
   const transformProductForCart = (prod: Product, qty: number = 1) => {
     // FIXED: Product_price is selling price, discounted_price is MRP
+
+    // Derive currently selected variant (if any)
+    const variantIndex = hasColorVariants ? selectedVariantIndex : null;
+    const variant =
+      variantIndex !== null && variantIndex >= 0 && variantIndex < colorVariants.length
+        ? colorVariants[variantIndex]
+        : undefined;
+
+    // Prefer variant-specific image, fall back to product default image
+    let primaryImage = prod.Product_image[0] || "";
+    if (variantIndex !== null) {
+      const variantImages = getVariantImages(variantIndex);
+      if (variantImages.length > 0) {
+        primaryImage = variantImages[0];
+      }
+    }
+
     return {
       id: parseInt(prod._id.slice(-8), 16),
       _id: prod._id,
@@ -263,14 +298,19 @@ const ProductDetailPage: React.FC = () => {
       Product_name: prod.Product_name,
       price: `₹${prod.Product_price}`, // Selling price
       Product_price: prod.Product_price, // Selling price
-      originalPrice: prod.discounted_price && prod.discounted_price > prod.Product_price
-        ? `₹${prod.discounted_price}`
-        : `₹${prod.Product_price}`, // MRP (higher price)
-      image: prod.Product_image[0] || "",
+      originalPrice:
+        prod.discounted_price && prod.discounted_price > prod.Product_price
+          ? `₹${prod.discounted_price}`
+          : `₹${prod.Product_price}`, // MRP (higher price)
+      image: primaryImage,
       Product_image: prod.Product_image,
       isNew: prod.isNew || false,
       quantity: qty,
       Product_available: prod.Product_available,
+      // Optional color variant metadata
+      variantIndex: variantIndex !== null ? variantIndex : undefined,
+      colorName: variant?.colorName,
+      colorCode: variant?.colorCode,
     };
   };
 
@@ -298,6 +338,16 @@ const ProductDetailPage: React.FC = () => {
 
   const handleAddToCart = () => {
     if (!product) return;
+
+    // If product has color variants, require a selection before adding
+    if (hasColorVariants && selectedVariantIndex === null) {
+      toast({
+        title: "Please select a color",
+        description: "Choose a color variant before adding to cart.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     const cartProduct = transformProductForCart(product, quantity);
     addToCart(cartProduct);
@@ -389,13 +439,34 @@ const ProductDetailPage: React.FC = () => {
     const codTotal = Math.max(1, Math.round(baseItemsTotal));
     const onlineTotal = Math.max(1, codTotal - 50);
 
+    // Derive selected variant for direct buy
+    const directVariantIndex = hasColorVariants ? selectedVariantIndex : null;
+    const directVariant =
+      directVariantIndex !== null &&
+      directVariantIndex >= 0 &&
+      directVariantIndex < colorVariants.length
+        ? colorVariants[directVariantIndex]
+        : undefined;
+
+    let directPrimaryImage = buyProduct.Product_image[0] || "";
+    if (directVariantIndex !== null) {
+      const variantImages = getVariantImages(directVariantIndex);
+      if (variantImages.length > 0) {
+        directPrimaryImage = variantImages[0];
+      }
+    }
+
     const orderItems = [
       {
         productId: buyProduct._id,
         quantity: quantity,
         price: sellingPriceForPayment,
         name: buyProduct.Product_name,
-        image: buyProduct.Product_image[0] || "",
+        image: directPrimaryImage,
+        variantIndex:
+          directVariantIndex !== null ? directVariantIndex : undefined,
+        colorName: directVariant?.colorName,
+        colorCode: directVariant?.colorCode,
       },
     ];
 
@@ -590,6 +661,31 @@ const ProductDetailPage: React.FC = () => {
   const onlinePayableTotal = Math.max(1, codPayableTotal - 50);
   const overallCheckoutLoading = checkoutLoading || directCheckoutLoading;
 
+  // Color variant helpers
+  const colorVariants = product?.colorVariants || [];
+  const hasColorVariants = colorVariants.length > 0;
+
+  const getVariantImages = (variantIndex: number): string[] => {
+    if (!product) return [];
+    const variant = colorVariants[variantIndex];
+    if (!variant || !Array.isArray(variant.imageIndexes)) return [];
+    const baseImages = Array.isArray(product.Product_image)
+      ? product.Product_image
+      : [];
+    return (variant.imageIndexes || [])
+      .map((idx) => baseImages[idx])
+      .filter((img): img is string => typeof img === "string" && !!img);
+  };
+
+  const currentImages: string[] = product
+    ? hasColorVariants && selectedVariantIndex !== null
+      ? (() => {
+          const imgs = getVariantImages(selectedVariantIndex);
+          return imgs.length > 0 ? imgs : product.Product_image || [];
+        })()
+      : product.Product_image || []
+    : [];
+
   const scrollThumbnails = (direction: "left" | "right") => {
     const container = thumbContainerRef.current;
     if (!container) return;
@@ -651,7 +747,7 @@ const ProductDetailPage: React.FC = () => {
                   <img src={selectedImage!} alt="Product zoom view" className="w-full max-h-[80vh] object-contain" onError={(e) => (e.currentTarget.src = "/fallback.jpg")} />
                 </div>
                 <div className="flex justify-center mt-6 space-x-3 max-w-full overflow-x-auto px-2">
-                  {product.Product_image.map((img, idx) => (
+                  {currentImages.map((img, idx) => (
                     <button key={idx} onClick={() => setSelectedImage(img)} className={`flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden border-3 transition-all ${selectedImage === img ? "border-amber-400 ring-4 ring-amber-300/50" : "border-white/50 hover:border-amber-300"}`}>
                       <img src={img} alt={`View ${idx + 1}`} className="w-full h-full object-cover" onError={(e) => (e.currentTarget.src = "/fallback.jpg")} />
                     </button>
@@ -715,7 +811,7 @@ const ProductDetailPage: React.FC = () => {
                   style={{ WebkitOverflowScrolling: "touch" }}
                 >
 
-                  {product.Product_image.map((img, idx) => (
+                  {currentImages.map((img, idx) => (
                     <Card
                       key={idx}
                       className={`snap-start flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24 overflow-hidden cursor-pointer border-2 transition-all duration-300 hover:scale-105 ${
@@ -738,7 +834,7 @@ const ProductDetailPage: React.FC = () => {
                 </div>
 
                 {/* Arrow controls (hidden if few images) */}
-                {product.Product_image.length > 3 && (
+                {currentImages.length > 3 && (
                   <>
                     <button
                       type="button"
@@ -782,20 +878,88 @@ const ProductDetailPage: React.FC = () => {
                       {hasDiscount && (
                         <>
                           <span className="text-lg text-gray-400 line-through">₹{mrpPrice.toLocaleString()}</span>
-                          <Badge className="bg-emerald-100 text-emerald-800 font-semibold text-sm">Save ₹{savings.toLocaleString()}</Badge>
+                          <Badge className="bg-emerald-100 text-emerald-800 font-semibold text-sm">
+                            Save ₹{savings.toLocaleString()}
+                          </Badge>
                         </>
                       )}
                     </div>
-                    <p className="text-sm text-gray-600">Inclusive of all taxes • Free shipping • Blessed packaging</p>
+                    <p className="text-sm text-gray-600">
+                      Inclusive of all taxes • Free shipping • Delivery in 3–5 days • Blessed packaging
+                    </p>
                   </div>
 
                   <div className="space-y-6">
+                    {hasColorVariants && (
+                      <div className="space-y-2">
+                        <span className="font-semibold text-gray-700">Color:</span>
+                        <div className="flex flex-wrap gap-2">
+                          {colorVariants.map((variant, idx) => {
+                            const isSelected = selectedVariantIndex === idx;
+                            const variantImages = getVariantImages(idx);
+                            const previewImage = variantImages[0] || product.Product_image[0];
+
+                            return (
+                              <button
+                                key={idx}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedVariantIndex(idx);
+                                  if (variantImages.length > 0) {
+                                    setSelectedImage(variantImages[0]);
+                                  } else if (product.Product_image[0]) {
+                                    setSelectedImage(product.Product_image[0]);
+                                  }
+                                }}
+                                className={`flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-medium transition-all ${
+                                  isSelected
+                                    ? "border-amber-500 bg-amber-50 text-amber-700"
+                                    : "border-amber-200 bg-white text-gray-700 hover:bg-amber-50"
+                                }`}
+                              >
+                                {variant.colorCode ? (
+                                  <span
+                                    className="w-4 h-4 rounded-full border border-gray-200"
+                                    style={{ backgroundColor: variant.colorCode }}
+                                  />
+                                ) : previewImage ? (
+                                  <img
+                                    src={previewImage}
+                                    alt={variant.colorName || `Variant ${idx + 1}`}
+                                    className="w-5 h-5 rounded-full object-cover border border-gray-200"
+                                    onError={(e) => (e.currentTarget.src = "/fallback.jpg")}
+                                  />
+                                ) : null}
+                                <span className="truncate max-w-[96px]">
+                                  {variant.colorName || `Variant ${idx + 1}`}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
                     <div className="flex items-center gap-4">
                       <span className="font-semibold text-gray-700">Quantity:</span>
                       <div className="flex items-center border-2 border-amber-200 rounded-xl overflow-hidden">
-                        <button onClick={() => setQuantity((q) => Math.max(1, q - 1))} className="px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700" disabled={quantity <= 1}><Minus size={16} /></button>
-                        <span className="px-4 py-2 bg-white border-x-2 border-amber-200 font-semibold min-w-[50px] text-center text-gray-900">{quantity}</span>
-                        <button onClick={() => setQuantity((q) => Math.min(10, q + 1))} className="px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700" disabled={quantity >= 10}><Plus size={16} /></button>
+                        <button
+                          onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                          className="px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700"
+                          disabled={quantity <= 1}
+                        >
+                          <Minus size={16} />
+                        </button>
+                        <span className="px-4 py-2 bg-white border-x-2 border-amber-200 font-semibold min-w-[50px] text-center text-gray-900">
+                          {quantity}
+                        </span>
+                        <button
+                          onClick={() => setQuantity((q) => Math.min(10, q + 1))}
+                          className="px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700"
+                          disabled={quantity >= 10}
+                        >
+                          <Plus size={16} />
+                        </button>
                       </div>
                     </div>
 
@@ -1045,14 +1209,23 @@ const ProductDetailPage: React.FC = () => {
 
           {/* Related Products Section */}
           {relatedProducts.length > 0 && (
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="mt-16">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="mt-16"
+            >
               <div className="text-center mb-8">
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">Complete Your Spiritual Collection</h2>
                 <p className="text-gray-600 text-base max-w-2xl mx-auto">Discover more divine pieces that complement your spiritual journey</p>
               </div>
 
               <div className="relative">
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {/* On mobile: horizontal scroll strip. On tablet/desktop: responsive grid. */}
+                <div
+                  className="flex gap-3 overflow-x-auto pb-3 -mx-2 px-2 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-3 md:grid-cols-4 sm:gap-4"
+                  style={{ WebkitOverflowScrolling: "touch" }}
+                >
                   {relatedProducts.map((relatedProduct) => {
                     const relatedHasDiscount = relatedProduct.discounted_price && relatedProduct.discounted_price > relatedProduct.Product_price;
                     const relatedDisplayPrice = relatedProduct.Product_price; // Selling price
@@ -1064,7 +1237,7 @@ const ProductDetailPage: React.FC = () => {
                     return (
                       <div
                         key={relatedProduct._id}
-                        className="w-full cursor-pointer"
+                        className="flex-shrink-0 w-[72vw] xs:w-[60vw] sm:w-full cursor-pointer"
                         onClick={() => navigate(`/product/${relatedProduct._id}`)}
                       >
                         <Card className="group h-full border border-amber-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden bg-white">
@@ -1198,7 +1371,7 @@ const ProductDetailPage: React.FC = () => {
                         {(directBuyProduct || product)?.Product_name}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">
-                        Qty: {quantity} • Ships within 3–4 days
+                        Qty: {quantity} • Ships within 3–5 days
                       </p>
                     </div>
                   </div>
@@ -1210,7 +1383,7 @@ const ProductDetailPage: React.FC = () => {
                         MRP savings: ₹{savings.toLocaleString()} ({discountPercentage}% OFF)
                       </p>
                     )}
-                    <p className="text-[11px] text-emerald-700 font-semibold">Free Delivery in 3–4 days</p>
+                    <p className="text-[11px] text-emerald-700 font-semibold">Free Delivery in 3–5 days</p>
                     <p className="text-[11px] text-gray-500">Inclusive of all taxes</p>
                   </div>
                 </div>

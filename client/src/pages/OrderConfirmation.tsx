@@ -112,7 +112,7 @@ const OrderConfirmation = () => {
                     </div>
                     <div className="flex items-center gap-2 text-orange-700">
                       <Truck className="w-4 h-4" />
-                      <span className="text-xs">Track live status in the My Orders page.</span>
+                      <span className="text-xs">Your order will be delivered within 3–5 days. Track live status in the My Orders page.</span>
                     </div>
                     <div className="flex items-center gap-2 text-orange-700">
                       <CreditCard className="w-4 h-4" />

@@ -12,6 +12,19 @@ const cartItemSchema = new Schema({
     type: Number,
     required: true,
     min: 1
+  },
+  variantIndex: {
+    type: Number,
+    default: null,
+  },
+  colorName: {
+    type: String,
+  },
+  colorCode: {
+    type: String,
+  },
+  image: {
+    type: String,
   }
 });
 

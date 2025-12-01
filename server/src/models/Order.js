@@ -11,6 +11,19 @@ const orderItemSchema = new Schema({
   },
   quantity: { type: Number, required: true, min: 1 },
   price:    { type: Number, required: true, min: 0 },
+  variantIndex: {
+    type: Number,
+    default: null,
+  },
+  colorName: {
+    type: String,
+  },
+  colorCode: {
+    type: String,
+  },
+  image: {
+    type: String,
+  },
 });
 
 /* ---------- main schema ---------- */

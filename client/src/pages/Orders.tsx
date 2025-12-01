@@ -496,6 +496,9 @@ const Orders = () => {
                               />
                             </div>
                           )}
+                          <div className="text-[10px] text-green-700">
+                            Standard delivery in 3–5 days
+                          </div>
 
                           {/* Payment info */}
                           <div className="flex items-center justify-between text-[10px]">
@@ -578,6 +581,70 @@ const Orders = () => {
                   <p className="text-lg font-bold text-orange-800">₹{selectedOrder.totalAmount.toFixed(2)}</p>
                 </div>
               </div>
+
+              {(() => {
+                const itemsTotal =
+                  typeof selectedOrder.itemsTotal === "number"
+                    ? selectedOrder.itemsTotal
+                    : selectedOrder.items.reduce(
+                        (sum, it) => sum + (it.price || 0) * (it.quantity || 0),
+                        0
+                      );
+                const deliveryCharge =
+                  typeof selectedOrder.deliveryCharge === "number"
+                    ? selectedOrder.deliveryCharge
+                    : Math.max(0, selectedOrder.totalAmount - itemsTotal);
+
+                let originalMrpTotal = 0;
+                selectedOrder.items.forEach((it) => {
+                  const prod =
+                    typeof it.productId === "object" && it.productId
+                      ? (it.productId as any)
+                      : null;
+                  const basePrice =
+                    typeof prod?.Product_price === "number"
+                      ? prod.Product_price
+                      : it.price;
+                  originalMrpTotal += basePrice * (it.quantity || 0);
+                });
+                const productSavings =
+                  originalMrpTotal > itemsTotal
+                    ? originalMrpTotal - itemsTotal
+                    : 0;
+
+                return (
+                  <div className="border border-orange-100 rounded-xl p-3 bg-orange-50/40 space-y-1 text-[11px] text-orange-800">
+                    <div className="flex items-center justify-between">
+                      <span>Items subtotal</span>
+                      <span className="font-semibold">
+                        ₹{itemsTotal.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Delivery</span>
+                      <span className="font-semibold">
+                        {deliveryCharge === 0
+                          ? "FREE"
+                          : `₹${deliveryCharge.toFixed(2)}`}
+                      </span>
+                    </div>
+                    {productSavings > 0 && (
+                      <div className="flex items-center justify-between text-green-700">
+                        <span>You saved on products</span>
+                        <span className="font-semibold">
+                          - ₹{productSavings.toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                    <div className="border-t border-orange-100 pt-1 mt-1 flex items-center justify-between font-semibold text-[12px]">
+                      <span className="text-orange-900">Grand total</span>
+                      <span className="text-orange-800">
+                        ₹{selectedOrder.totalAmount.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Status checkpoints timeline (like Amazon) */}
               {(() => {
@@ -663,6 +730,9 @@ const Orders = () => {
                 <p className="text-[11px] text-orange-900">
                   {selectedOrder.shippingAddress?.pincode}, {selectedOrder.shippingAddress?.country}
                 </p>
+                <p className="text-[10px] text-orange-600 mt-1">
+                  Standard delivery time: 3–5 days across India
+                </p>
               </div>
 
               {/* Payment info */}
@@ -696,6 +766,7 @@ const Orders = () => {
                       typeof item.productId === "object" && item.productId
                         ? item.productId.Product_image?.[0] || item.productId.image
                         : item.image;
+                    const lineTotal = price * item.quantity;
 
                     return (
                       <div
@@ -713,10 +784,15 @@ const Orders = () => {
                           <p className="text-xs font-semibold text-orange-900 truncate">
                             {name || "Item"}
                           </p>
-                          <p className="text-[11px] text-orange-600">Qty: {item.quantity}</p>
+                          <p className="text-[11px] text-orange-600">
+                            Qty: {item.quantity} × ₹{price.toFixed(2)}
+                          </p>
+                          <p className="text-[10px] text-orange-500">
+                            Line total: ₹{lineTotal.toFixed(2)}
+                          </p>
                         </div>
                         <div className="text-right text-xs text-orange-800 font-semibold">
-                          ₹{(price * item.quantity).toFixed(2)}
+                          ₹{lineTotal.toFixed(2)}
                         </div>
                       </div>
                     );

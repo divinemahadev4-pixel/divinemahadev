@@ -16,6 +16,12 @@ import ImageUploader from "../../components/admin/ImageUploader";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+type ColorVariant = {
+  colorName: string;
+  colorCode?: string;
+  imageIndexes: number[];
+};
+
 interface ProductFormProps {
   onSubmit: (product: any) => void;
   categories: { id: string; name: string }[];
@@ -28,6 +34,7 @@ interface ProductFormProps {
     categoryId?: string;
     images?: string[];
     isAvailable?: boolean;
+    colorVariants?: ColorVariant[];
   } | null;
   submitLabel?: string;
 }
@@ -56,6 +63,9 @@ const ProductForm: React.FC<ProductFormProps> = ({
   );
   const [images, setImages] = useState<string[]>(initialData?.images || []);
   const [isAvailable, setIsAvailable] = useState(initialData?.isAvailable ?? true);
+  const [colorVariants, setColorVariants] = useState<ColorVariant[]>(
+    initialData?.colorVariants || []
+  );
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
@@ -90,6 +100,20 @@ const ProductForm: React.FC<ProductFormProps> = ({
       return;
     }
 
+    if (colorVariants.length > 0) {
+      const invalidVariant = colorVariants.some(
+        (v) => !v.colorName || !v.colorName.trim()
+      );
+      if (invalidVariant) {
+        toast({
+          title: "Error",
+          description: "Color name is required for all color variants",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
@@ -101,6 +125,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
         category,
         images,
         isAvailable,
+        colorVariants,
       };
 
       await onSubmit(productData);
@@ -121,6 +146,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
       setCategory(initialData?.categoryId || categories[0]?.id || "");
       setImages(initialData?.images || []);
       setIsAvailable(initialData?.isAvailable ?? true);
+      setColorVariants(initialData?.colorVariants || []);
     } finally {
       setLoading(false);
     }
@@ -223,7 +249,13 @@ const ProductForm: React.FC<ProductFormProps> = ({
           <div className="space-y-2">
             <Label>Product Images *</Label>
             <ImageUploader
-              onUpload={setImages}
+              onUpload={(urls) => {
+                // Append new images to existing list so variant mappings stay valid
+                setImages((prev) => {
+                  const nextImages = [...prev, ...urls];
+                  return nextImages;
+                });
+              }}
               cloudinaryOptions={cloudinaryOptions}
             />
 
@@ -243,6 +275,158 @@ const ProductForm: React.FC<ProductFormProps> = ({
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Color Variants (optional) */}
+          <div className="space-y-3">
+            <Label>Color Variants (optional)</Label>
+            <p className="text-xs text-gray-500">
+              Define different colors for this product and map them to the uploaded images.
+            </p>
+
+            <div className="space-y-4">
+              {colorVariants.map((variant, variantIndex) => (
+                <div
+                  key={variantIndex}
+                  className="border border-gray-200 rounded-md p-3 space-y-3 bg-gray-50"
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Color Name</Label>
+                      <Input
+                        type="text"
+                        value={variant.colorName}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setColorVariants((prev) =>
+                            prev.map((v, i) =>
+                              i === variantIndex ? { ...v, colorName: value } : v
+                            )
+                          );
+                        }}
+                        placeholder="e.g. Red"
+                        className="h-9 text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Color Code (optional)</Label>
+                      <Input
+                        type="text"
+                        value={variant.colorCode || ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setColorVariants((prev) =>
+                            prev.map((v, i) =>
+                              i === variantIndex ? { ...v, colorCode: value } : v
+                            )
+                          );
+                        }}
+                        placeholder="#FF0000 or leave blank"
+                        className="h-9 text-sm"
+                      />
+                    </div>
+                    <div className="flex justify-end">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-9 text-xs"
+                        onClick={() =>
+                          setColorVariants((prev) =>
+                            prev.filter((_, i) => i !== variantIndex)
+                          )
+                        }
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Per-color image uploader (optional) */}
+                  <div className="md:col-span-3 space-y-2">
+                    <Label className="text-xs">Upload images for this color (optional)</Label>
+                    <ImageUploader
+                      onUpload={(urls) => {
+                        setImages((prev) => {
+                          const startIndex = prev.length;
+                          const nextImages = [...prev, ...urls];
+
+                          // Map newly uploaded images to this specific color variant
+                          // Replace previous imageIndexes so the latest upload becomes primary
+                          setColorVariants((prevVariants) =>
+                            prevVariants.map((v, i) => {
+                              if (i !== variantIndex) return v;
+                              const newIndexes = urls.map((_, offset) => startIndex + offset);
+                              return {
+                                ...v,
+                                imageIndexes: newIndexes,
+                              };
+                            })
+                          );
+
+                          return nextImages;
+                        });
+                      }}
+                      cloudinaryOptions={cloudinaryOptions}
+                    />
+                  </div>
+
+                  {images.length > 0 && variant.imageIndexes.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs text-gray-600">Selected images for this color</p>
+                      <div className="grid grid-cols-4 gap-2">
+                        {variant.imageIndexes
+                          .map((imgIndex) => ({ imgIndex, url: images[imgIndex] }))
+                          .filter((item) => typeof item.url === "string" && item.url)
+                          .map(({ imgIndex, url }) => (
+                            <button
+                              key={imgIndex}
+                              type="button"
+                              onClick={() => {
+                                // Allow removing an image from this color
+                                setColorVariants((prev) =>
+                                  prev.map((v, i) =>
+                                    i === variantIndex
+                                      ? {
+                                          ...v,
+                                          imageIndexes: v.imageIndexes.filter(
+                                            (idx) => idx !== imgIndex
+                                          ),
+                                        }
+                                      : v
+                                  )
+                                );
+                              }}
+                              className="relative aspect-square rounded-md border overflow-hidden group text-left text-xs border-purple-600 ring-2 ring-purple-200"
+                            >
+                              <img
+                                src={url}
+                                alt={`Color-${variantIndex}-img-${imgIndex}`}
+                                className="object-cover w-full h-full"
+                              />
+                              <div className="absolute inset-0 bg-purple-600/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="h-9 text-xs"
+              onClick={() =>
+                setColorVariants((prev) => [
+                  ...prev,
+                  { colorName: "", colorCode: "", imageIndexes: [] },
+                ])
+              }
+              disabled={images.length === 0}
+            >
+              Add Color Variant
+            </Button>
           </div>
 
           {/* Submit */}

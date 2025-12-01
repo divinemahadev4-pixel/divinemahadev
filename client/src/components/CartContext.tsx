@@ -24,6 +24,10 @@ interface Product {
   Product_name?: string;
   Product_price?: number;
   Product_image?: string[];
+  // Optional color variant metadata
+  variantIndex?: number;
+  colorName?: string;
+  colorCode?: string;
 }
 
 interface BackendCartItem {
@@ -39,6 +43,11 @@ interface BackendCartItem {
     Product_available: boolean;
   };
   quantity: number;
+  // These fields live on the cart item itself, not the product ref
+  variantIndex?: number;
+  colorName?: string;
+  colorCode?: string;
+  image?: string;
 }
 
 interface CartContextType {
@@ -94,6 +103,8 @@ const convertBackendItemToProduct = (item: BackendCartItem): Product | null => {
     return null; // This will be filtered out
   }
 
+  const image = item.image || item.productId.Product_image?.[0] || "";
+
   return {
     id: parseInt(item.productId._id.slice(-6), 16) % 1000000,
     _id: item.productId._id,
@@ -102,10 +113,14 @@ const convertBackendItemToProduct = (item: BackendCartItem): Product | null => {
     price: item.productId.Product_price?.toString() || "0",
     Product_price: item.productId.Product_price || 0,
     originalPrice: item.productId.Product_price?.toString() || "0",
-    image: item.productId.Product_image?.[0] || "",
+    image,
     Product_image: item.productId.Product_image || [],
     isNew: false,
     quantity: item.quantity || 1,
+    // Preserve any variant metadata stored on the cart item
+    variantIndex: typeof item.variantIndex === 'number' ? item.variantIndex : undefined,
+    colorName: item.colorName,
+    colorCode: item.colorCode,
   };
 };
 
@@ -114,6 +129,11 @@ const convertProductToBackendFormat = (product: Product) => {
     id: product._id || product.id.toString(),
     quantity: product.quantity || 1,
     productId: product._id,
+    // Forward optional variant metadata (ignored by backend if not supported)
+    variantIndex: typeof product.variantIndex === 'number' ? product.variantIndex : undefined,
+    colorName: product.colorName,
+    colorCode: product.colorCode,
+    image: product.image,
   };
 };
 
@@ -318,8 +338,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       if (isAuthenticated && user && user.token && !hasLoggedOut) {
         const backendProductId = product._id || product.id;
 
-
-        // ✅ SIMPLIFIED: Only send productId and quantity for normal products
+        // ✅ SIMPLIFIED: Send productId, quantity and optional variant metadata
         const response = await fetch(`${API_URL}/cart/add`, {
           method: "POST",
           headers: {
@@ -329,6 +348,10 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           body: JSON.stringify({
             productId: backendProductId,
             quantity: product.quantity || 1,
+            variantIndex: typeof product.variantIndex === 'number' ? product.variantIndex : undefined,
+            colorName: product.colorName,
+            colorCode: product.colorCode,
+            image: product.image,
           }),
         });
 

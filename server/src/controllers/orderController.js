@@ -71,18 +71,35 @@ const createOrder = async (req, res) => {
       });
     }
 
-    // Validate and format items
+    // Validate and format items (preserve optional color variant info)
     const formattedItems = items.map(item => {
       if (!item.productId) {
         throw new Error('Product ID is required for all items');
       }
-      
-      return {
-        productId: mongoose.Types.ObjectId.isValid(item.productId) ? 
-          new mongoose.Types.ObjectId(item.productId) : item.productId,
+
+      const base = {
+        productId: mongoose.Types.ObjectId.isValid(item.productId)
+          ? new mongoose.Types.ObjectId(item.productId)
+          : item.productId,
         quantity: parseInt(item.quantity) || 1,
-        price: parseFloat(item.price) || 0
+        price: parseFloat(item.price) || 0,
       };
+
+      // Optional color variant metadata for display/analytics
+      if (typeof item.variantIndex === 'number') {
+        base.variantIndex = item.variantIndex;
+      }
+      if (item.colorName) {
+        base.colorName = item.colorName;
+      }
+      if (item.colorCode) {
+        base.colorCode = item.colorCode;
+      }
+      if (item.image) {
+        base.image = item.image;
+      }
+
+      return base;
     });
 
     // Create order with enhanced data

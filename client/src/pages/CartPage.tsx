@@ -10,7 +10,6 @@ import axiosInstance from "@/utils/axiosConfig";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Minus, Plus, Trash2, ShoppingBag, Truck, Lock, Sparkles, Sun, CreditCard } from "lucide-react";
 
-// New imports for phone verification and payment processing
 import { usePhoneVerification } from "@/hooks/usePhoneVerification";
 import { usePaymentProcessing } from "@/hooks/usePaymentProcessing";
 import PhoneVerificationModal from "@/components/PhoneVerificationModal";
@@ -36,17 +35,9 @@ const CartPage = () => {
 
   const getProductId = (item: any) => item._id || item.id;
   const totalPrice = getCartTotal();
-  const DELIVERY_CHARGE = 0;
 
-  // Calculate 15% discount for online payments
-  const calculateOnlineDiscount = (amount: number) => {
-    return amount * 0.15; // 15% discount
-  };
-
-  const getOnlineDiscountedPrice = (amount: number) => {
-    const discount = calculateOnlineDiscount(amount);
-    return amount - discount;
-  };
+  const calculateOnlineDiscount = (amount: number) => amount * 0.15;
+  const getOnlineDiscountedPrice = (amount: number) => amount - calculateOnlineDiscount(amount);
 
   useEffect(() => {
     if (phoneVerification.phoneVerified) {
@@ -58,23 +49,21 @@ const CartPage = () => {
     }
   }, [phoneVerification.phoneVerified, phoneVerification.phoneNumber]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: any) => {
     const { name, value } = e.target;
     setShippingAddress(prev => ({ ...prev, [name]: value }));
   };
-
   const handleQuantityChange = (productId: number | string, newQuantity: number) => {
     if (newQuantity < 1) {
       removeCart(productId);
-      toast({ title: "Item removed", description: "Item has been removed from your cart", variant: "default" });
+      toast({ title: "Item removed", description: "Item has been removed from your cart" });
     } else {
       updateQuantity(productId, newQuantity);
     }
   };
 
-  const handleProductClick = (productId: number | string) => {
-    const id = typeof productId === 'string' ? productId : productId.toString();
-    navigate(`/product/${id}`);
+  const handleProductClick = (productId: any) => {
+    navigate(`/product/${productId}`);
   };
 
   const startCheckout = () => {
@@ -91,14 +80,16 @@ const CartPage = () => {
   };
 
   const handlePaymentSelection = async (paymentMethod: "cod" | "online") => {
-    const requiredFields = ["fullName", "address", "city", "state", "pinCode", "phone"];
-    const missingFields = requiredFields.filter((field) => !shippingAddress[field].trim());
-    if (missingFields.length > 0) {
-      toast({ title: "Missing Information", description: "Please fill in all shipping address fields", variant: "destructive" });
+    const required = ["fullName", "address", "city", "state", "pinCode", "phone"];
+    const missing = required.filter((field) => !shippingAddress[field].trim());
+
+    if (missing.length > 0) {
+      toast({ title: "Missing Information", description: "Please fill all fields", variant: "destructive" });
       return;
     }
+
     if (!phoneVerification.phoneVerified) {
-      toast({ title: "Phone Not Verified", description: "Please verify your phone number first", variant: "destructive" });
+      toast({ title: "Phone Not Verified", description: "Please verify your phone number", variant: "destructive" });
       return;
     }
 
@@ -107,18 +98,20 @@ const CartPage = () => {
       quantity: item.quantity || 1,
       price: parseFloat(String(item.price).replace(/[^0-9.-]+/g, "")),
       name: item.name || item.Product_name,
-      image: item.image || (item.Product_image && item.Product_image[0])
+      image: item.image || (item.Product_image && item.Product_image[0]),
+      // Optional color variant metadata for order display
+      variantIndex: typeof item.variantIndex === "number" ? item.variantIndex : undefined,
+      colorName: item.colorName,
+      colorCode: item.colorCode,
     }));
 
     const deliveryCharge = 0;
-
-    // Calculate final amount based on payment method
     let finalAmount = totalPrice + deliveryCharge;
     let discountAmount = 0;
 
     if (paymentMethod === "online") {
       discountAmount = calculateOnlineDiscount(totalPrice);
-      finalAmount = getOnlineDiscountedPrice(totalPrice) + deliveryCharge;
+      finalAmount = getOnlineDiscountedPrice(totalPrice);
     }
 
     const success = await processPayment(
@@ -127,7 +120,7 @@ const CartPage = () => {
       paymentMethod,
       {
         itemsTotal: totalPrice,
-        deliveryCharge: deliveryCharge,
+        deliveryCharge,
         totalAmount: finalAmount
       },
       "cart"
@@ -139,115 +132,66 @@ const CartPage = () => {
       setSelectedPaymentMethod(null);
       phoneVerification.resetPhoneVerification();
 
-      // Show success message with discount info
-      if (paymentMethod === "online") {
-        toast({
-          title: "Order Placed Successfully! 🎉",
-          description: `You saved ₹${discountAmount.toLocaleString()} with online payment!`,
-          duration: 3000,
-        });
-      } else {
-        toast({
-          title: "Order Placed Successfully!",
-          description: "Your divine items are on their way",
-          duration: 2000,
-        });
-      }
+      toast({
+        title: "Order Placed Successfully!",
+        description:
+          paymentMethod === "online"
+            ? `You saved ₹${discountAmount.toLocaleString()} with online payment!`
+            : "Your divine items are on their way"
+      });
     }
   };
 
-  const handlePaymentMethodSelect = (method: "cod" | "online") => {
-    setSelectedPaymentMethod(method);
-  };
-
   const getItemTotal = (item: any) => {
-    if (!item || !item.price) return 0;
-    const priceString = typeof item.price === 'string' ? item.price : String(item.price);
-    const priceNumber = parseFloat(priceString.replace(/[^0-9.-]+/g, ""));
-    if (isNaN(priceNumber)) return 0;
-    const quantity = item.quantity || 1;
-    return priceNumber * quantity;
+    const num = parseFloat(String(item.price).replace(/[^0-9.-]+/g, ""));
+    return (isNaN(num) ? 0 : num) * (item.quantity || 1);
   };
 
   const getItemUnitPrice = (item: any) => {
-    if (!item || !item.price) return 0;
-    const priceString = typeof item.price === 'string' ? item.price : String(item.price);
-    const priceNumber = parseFloat(priceString.replace(/[^0-9.-]+/g, ""));
-    return isNaN(priceNumber) ? 0 : priceNumber;
+    const num = parseFloat(String(item.price).replace(/[^0-9.-]+/g, ""));
+    return isNaN(num) ? 0 : num;
   };
-
-  if (cart.length === 0) {
-    return (
-      <div
-        className="min-h-screen pt-20 pb-6 px-4 flex items-center justify-center"
-        style={{
-          background: "linear-gradient(135deg, #ffffff 0%, #fef7f0 40%, #fffbeb 100%)",
-        }}
-      >
-        <div className="text-center max-w-md mx-auto">
-          <div className="w-24 h-24 bg-gradient-to-br from-orange-100 to-amber-50 rounded-full flex items-center justify-center mx-auto mb-6">
-            <ShoppingBag className="w-12 h-12 text-orange-600" />
-          </div>
-          <h2 className="text-2xl lg:text-3xl font-bold text-orange-900 mb-4">
-            Your Divine Cart is Empty
-          </h2>
-          <p className="text-orange-600 mb-8 leading-relaxed">
-            Discover our sacred collection and add blessed items to your cart
-          </p>
-          <Button
-            onClick={() => navigate("/")}
-            className="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white px-8 py-3 rounded-full font-semibold shadow-lg hover:shadow-xl transition-all"
-          >
-            Explore Divine Collection
-          </Button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <>
+      {/* FIX ADDED HERE */}
+      <AnimatePresence>
       <div
         className="min-h-screen pt-20 pb-6 px-4 overflow-x-hidden"
         style={{
           background: "linear-gradient(135deg, #ffffff 0%, #fef7f0 40%, #fffbeb 100%)",
         }}
       >
+
+        {/* ---------------- MAIN PAGE CONTENT ---------------- */}
         <div className="container mx-auto max-w-6xl">
-          {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-8"
-          >
+
+          {/* --- HEADER --- */}
+          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
             <div className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-100 to-amber-50 text-orange-700 px-4 py-2 rounded-full text-sm font-semibold mb-4 border border-orange-200">
               <Sparkles className="w-4 h-4" />
               Divine Mahakal Sacred Items
             </div>
-            <h1 className="text-3xl lg:text-4xl font-bold text-orange-900 mb-2">
-              Divine Cart
-            </h1>
-            <p className="text-orange-600">
-              Review your selected sacred items
-            </p>
+            <h1 className="text-3xl lg:text-4xl font-bold text-orange-900 mb-2">Divine Cart</h1>
+            <p className="text-orange-600">Review your selected sacred items</p>
           </motion.div>
 
+          {/* GRID: ITEMS + SUMMARY */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Cart Items */}
+
+            {/* CART ITEMS */}
             <div className="lg:col-span-2 space-y-4">
               {cart.map((item, index) => (
                 <motion.div
-                  key={`${getProductId(item)}-${index}`}
+                  key={index}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
                   className="bg-white rounded-xl border border-orange-200 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
-                  style={{
-                    background: "linear-gradient(135deg, rgba(255,255,255,.98) 0%, rgba(254,242,242,.98) 60%, rgba(255,247,237,.98) 100%)",
-                  }}
                 >
                   <div className="p-4 flex flex-col sm:flex-row gap-4">
-                    {/* Product Image */}
+
+                    {/* IMAGE */}
                     <div
                       className="flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden cursor-pointer bg-gradient-to-br from-orange-50 to-white"
                       onClick={() => handleProductClick(getProductId(item))}
@@ -255,362 +199,151 @@ const CartPage = () => {
                       <img
                         src={item.image || (item.Product_image && item.Product_image[0]) || "/fallback.jpg"}
                         alt={item.name || item.Product_name}
-                        className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                        className="w-full h-full object-cover hover:scale-110 transition-transform"
                       />
                     </div>
 
-                    {/* Product Details */}
+                    {/* DETAILS */}
                     <div className="flex-grow min-w-0">
                       <div className="flex justify-between items-start mb-2">
                         <h3
-                          className="font-semibold text-orange-900 cursor-pointer hover:text-orange-700 transition-colors line-clamp-2"
+                          className="font-semibold text-orange-900 cursor-pointer hover:text-orange-700 line-clamp-2"
                           onClick={() => handleProductClick(getProductId(item))}
                         >
                           {item.name || item.Product_name}
                         </h3>
+
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => removeCart(getProductId(item))}
-                          className="h-8 w-8 rounded-full text-orange-400 hover:text-rose-500 hover:bg-rose-50 transition-all"
+                          className="h-8 w-8 rounded-full text-orange-400 hover:text-rose-500 hover:bg-rose-50"
                         >
                           <Trash2 size={16} />
                         </Button>
                       </div>
 
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          {/* Quantity Controls */}
-                          <div className="flex items-center border border-orange-200 rounded-lg overflow-hidden">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleQuantityChange(getProductId(item), (item.quantity || 1) - 1)}
-                              className="h-8 w-8 rounded-none text-orange-600 hover:bg-orange-100"
-                            >
-                              <Minus size={14} />
-                            </Button>
-                            <span className="px-3 py-1 bg-white text-sm font-semibold text-orange-900 min-w-[40px] text-center">
-                              {item.quantity || 1}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleQuantityChange(getProductId(item), (item.quantity || 1) + 1)}
-                              className="h-8 w-8 rounded-none text-orange-600 hover:bg-orange-100"
-                            >
-                              <Plus size={14} />
-                            </Button>
-                          </div>
+                      {/* QUANTITY + PRICE */}
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center border border-orange-200 rounded-lg overflow-hidden">
+                          <Button variant="ghost" size="icon" onClick={() => handleQuantityChange(getProductId(item), (item.quantity || 1) - 1)} className="h-8 w-8 text-orange-600 hover:bg-orange-100"><Minus size={14} /></Button>
+                          <span className="px-3 py-1 bg-white text-sm font-semibold text-orange-900 min-w-[40px] text-center">{item.quantity || 1}</span>
+                          <Button variant="ghost" size="icon" onClick={() => handleQuantityChange(getProductId(item), (item.quantity || 1) + 1)} className="h-8 w-8 text-orange-600 hover:bg-orange-100"><Plus size={14} /></Button>
+                        </div>
 
-                          {/* Price */}
-                          <div className="text-right">
-                            <div className="text-lg font-bold text-orange-900">
-                              ₹{getItemTotal(item).toLocaleString()}
-                            </div>
-                            <div className="text-sm text-orange-500">
-                              ₹{getItemUnitPrice(item).toLocaleString()} each
-                            </div>
-                          </div>
+                        <div className="text-right ml-auto">
+                          <div className="text-lg font-bold text-orange-900">₹{getItemTotal(item).toLocaleString()}</div>
+                          <div className="text-sm text-orange-500">₹{getItemUnitPrice(item).toLocaleString()} each</div>
                         </div>
                       </div>
+
                     </div>
                   </div>
                 </motion.div>
               ))}
             </div>
 
-            {/* Order Summary */}
+            {/* ORDER SUMMARY CARD */}
             <div className="lg:col-span-1">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="bg-white rounded-xl border border-orange-200 shadow-xl p-6 sticky top-24"
-                style={{
-                  background: "linear-gradient(135deg, rgba(255,255,255,.98) 0%, rgba(254,242,242,.98) 60%, rgba(255,247,237,.98) 100%)",
-                }}
-              >
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+                className="bg-white rounded-xl border border-orange-200 shadow-xl p-6 sticky top-24">
+
                 <h2 className="text-xl font-bold text-orange-900 mb-4 flex items-center gap-2">
-                  <Sun className="w-5 h-5 text-orange-600" />
-                  Order Summary
+                  <Sun className="w-5 h-5 text-orange-600" /> Order Summary
                 </h2>
 
-                {/* Calculation Section */}
                 <div className="space-y-3 mb-6">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-orange-600">Subtotal ({cart.reduce((sum, item) => sum + (item.quantity || 1), 0)} items)</span>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-orange-600">Subtotal ({cart.reduce((sum, i) => sum + (i.quantity || 1), 0)} items)</span>
                     <span className="font-semibold">₹{totalPrice.toLocaleString()}</span>
                   </div>
 
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-orange-600">Delivery Charge</span>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-orange-600">Delivery (3–5 Days)</span>
                     <span className="font-semibold text-green-600">FREE</span>
                   </div>
 
-                  {/* Online Payment Discount Info */}
-                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <CreditCard className="w-4 h-4 text-green-600" />
-                      <span className="text-sm font-semibold text-green-700">Online Payment Offer</span>
+                  {/* DISCOUNT BOX */}
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                    <div className="flex justify-between mb-1 text-xs text-green-700">
+                      <div className="flex items-center gap-2"><CreditCard className="w-4 h-4" /> Extra 15% OFF (Online)</div>
+                      <span>-₹{calculateOnlineDiscount(totalPrice).toLocaleString()}</span>
                     </div>
-                    <p className="text-xs text-green-600">
-                      Get 15% OFF when you pay online! Save ₹{calculateOnlineDiscount(totalPrice).toLocaleString()}
-                    </p>
-                  </div>
-
-                  <div className="border-t border-orange-200 pt-3">
-                    <div className="flex justify-between items-center text-lg font-bold">
-                      <span className="text-orange-900">Total Amount</span>
-                      <span className="text-orange-600">₹{totalPrice.toLocaleString()}</span>
-                    </div>
-                    <div className="text-sm text-green-600 font-semibold mt-1">
-                      Pay only ₹{getOnlineDiscountedPrice(totalPrice).toLocaleString()} with online payment!
-                    </div>
+                    <p className="text-xs text-green-600">Save more with online payment</p>
                   </div>
                 </div>
 
-                {/* Checkout Button */}
-                <Button
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
-                  onClick={startCheckout}
-                >
-                  <Lock className="w-4 h-4 mr-2" />
-                  Proceed to Checkout
+                <Button onClick={startCheckout} className="w-full h-11 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 text-white font-semibold">
+                  <Lock className="w-4 h-4 mr-2" /> Proceed to Checkout
                 </Button>
 
-                {/* Trust Indicators */}
-                <div className="mt-4 space-y-2 text-xs text-orange-500">
-                  <div className="flex items-center gap-2">
-                    <div className="w-1 h-1 bg-orange-400 rounded-full"></div>
-                    <span>Free shipping on all orders</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-1 h-1 bg-orange-400 rounded-full"></div>
-                    <span>Secure payment processing</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-1 h-1 bg-orange-400 rounded-full"></div>
-                    <span>Divine quality guarantee</span>
-                  </div>
-                </div>
               </motion.div>
             </div>
+          </div>
+
+          {/* SHIPPING FORM + PAYMENT BUTTONS */}
+          <div className="bg-orange-50 rounded-xl p-4 mb-6 border border-orange-200 mt-6">
+
+            <h3 className="font-semibold text-orange-900 mb-3 text-sm flex items-center gap-2">
+              <ShoppingBag className="w-4 h-4" /> Order Summary ({cart.length} items)
+            </h3>
+
+            {/* SHIPPING INFO */}
+            <div className="space-y-4 mt-4">
+              <h3 className="font-semibold text-orange-900 text-lg">Shipping Information</h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Full Name</Label>
+                  <Input name="fullName" value={shippingAddress.fullName} onChange={handleInputChange} />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Phone</Label>
+                  <Input disabled name="phone" value={shippingAddress.phone} />
+                </div>
+
+                <div className="md:col-span-2 space-y-2">
+                  <Label>Address</Label>
+                  <Input name="address" value={shippingAddress.address} onChange={handleInputChange} />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>City</Label>
+                  <Input name="city" value={shippingAddress.city} onChange={handleInputChange} />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>State</Label>
+                  <Input name="state" value={shippingAddress.state} onChange={handleInputChange} />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>PIN Code</Label>
+                  <Input name="pinCode" value={shippingAddress.pinCode} onChange={handleInputChange} />
+                </div>
+              </div>
+            </div>
+
+            {/* PAYMENT BUTTONS */}
+            <div className="bg-white border-t border-orange-200 p-6 space-y-3 rounded-b-2xl mt-6">
+              <Button onClick={() => handlePaymentSelection("online")} className="w-full h-12 bg-green-600 text-white rounded-xl">
+                <CreditCard className="w-5 h-5" /> Pay Online & Save 15%
+              </Button>
+
+              <Button onClick={() => handlePaymentSelection("cod")} variant="outline" className="w-full h-12 border-orange-600 text-orange-700 rounded-xl">
+                <Truck className="w-5 h-5" /> Cash on Delivery
+              </Button>
+            </div>
+
           </div>
         </div>
       </div>
 
-      {/* Checkout Modal */}
-      <AnimatePresence>
-        {isCheckingOut && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-            onClick={() => !checkoutLoading && setIsCheckingOut(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col"
-              style={{
-                background: "linear-gradient(135deg, rgba(255,255,255,.98) 0%, rgba(254,242,242,.98) 60%, rgba(255,247,237,.98) 100%)",
-              }}
-              onClick={e => e.stopPropagation()}
-            >
-              {/* Header */}
-              <div className="flex-shrink-0 bg-gradient-to-r from-orange-600 to-amber-600 text-white px-6 py-4 rounded-t-2xl">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-xl font-bold">Complete Your Divine Order</h2>
-                    <p className="text-orange-100 text-sm mt-1">
-                      Sacred shopping experience with Divine Mahakal
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 rounded-full hover:bg-white/20 text-white"
-                    onClick={() => !checkoutLoading && setIsCheckingOut(false)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 overflow-y-auto p-6">
-                {/* Order Summary */}
-                <div className="bg-orange-50 rounded-xl p-4 mb-6 border border-orange-200">
-                  <h3 className="font-semibold text-orange-900 mb-3 text-sm flex items-center gap-2">
-                    <ShoppingBag className="w-4 h-4" />
-                    Order Summary ({cart.length} items)
-                  </h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between font-medium">
-                      <span>Subtotal</span>
-                      <span>₹{totalPrice.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between text-green-600">
-                      <span>Delivery</span>
-                      <span>FREE</span>
-                    </div>
-
-                    {/* Online Payment Discount Display */}
-                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-3 mt-2">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-green-700 font-semibold text-sm">Online Payment Discount (15%)</span>
-                        <span className="text-green-700 font-bold">-₹{calculateOnlineDiscount(totalPrice).toLocaleString()}</span>
-                      </div>
-                      <p className="text-xs text-green-600">
-                        Pay online and save big on your divine purchase!
-                      </p>
-                    </div>
-
-                    <div className="flex justify-between font-bold text-base text-orange-700 pt-2 border-t border-orange-200">
-                      <span>Total Amount</span>
-                      <div className="text-right">
-                        <div className="text-gray-500 text-sm line-through">
-                          ₹{totalPrice.toLocaleString()}
-                        </div>
-                        <div className="text-green-600">
-                          ₹{getOnlineDiscountedPrice(totalPrice).toLocaleString()} (Online)
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Shipping Address Form */}
-                <div className="space-y-4">
-                  <h3 className="font-semibold text-orange-900 text-lg">Shipping Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="fullName" className="text-orange-700">Full Name</Label>
-                      <Input
-                        id="fullName"
-                        name="fullName"
-                        value={shippingAddress.fullName}
-                        onChange={handleInputChange}
-                        className="border-orange-300 focus:border-orange-400"
-                        placeholder="Enter your full name"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="phone" className="text-orange-700">Phone Number</Label>
-                      <Input
-                        id="phone"
-                        name="phone"
-                        value={shippingAddress.phone}
-                        onChange={handleInputChange}
-                        className="border-orange-300 focus:border-orange-400"
-                        placeholder="Verified phone number"
-                        disabled
-                      />
-                    </div>
-                    <div className="md:col-span-2 space-y-2">
-                      <Label htmlFor="address" className="text-orange-700">Address</Label>
-                      <Input
-                        id="address"
-                        name="address"
-                        value={shippingAddress.address}
-                        onChange={handleInputChange}
-                        className="border-orange-300 focus:border-orange-400"
-                        placeholder="Enter your complete address"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="city" className="text-orange-700">City</Label>
-                      <Input
-                        id="city"
-                        name="city"
-                        value={shippingAddress.city}
-                        onChange={handleInputChange}
-                        className="border-orange-300 focus:border-orange-400"
-                        placeholder="Enter your city"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="state" className="text-orange-700">State</Label>
-                      <Input
-                        id="state"
-                        name="state"
-                        value={shippingAddress.state}
-                        onChange={handleInputChange}
-                        className="border-orange-300 focus:border-orange-400"
-                        placeholder="Enter your state"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="pinCode" className="text-orange-700">PIN Code</Label>
-                      <Input
-                        id="pinCode"
-                        name="pinCode"
-                        value={shippingAddress.pinCode}
-                        onChange={handleInputChange}
-                        className="border-orange-300 focus:border-orange-400"
-                        placeholder="Enter PIN code"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Payment Buttons */}
-              <div className="flex-shrink-0 bg-white border-t border-orange-200 p-6 space-y-3 rounded-b-2xl">
-                {/* Online Payment Button with Discount */}
-                <Button
-                  onClick={() => handlePaymentSelection('online')}
-                  disabled={checkoutLoading}
-                  className="w-full h-12 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
-                >
-                  {checkoutLoading ? (
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Processing...
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center gap-2">
-                      <CreditCard className="w-5 h-5" />
-                      <div className="text-left">
-                        <div className="text-sm">Pay Online</div>
-                        <div className="text-xs opacity-90">Save 15% - ₹{getOnlineDiscountedPrice(totalPrice).toLocaleString()}</div>
-                      </div>
-                    </div>
-                  )}
-                </Button>
-
-                {/* COD Button */}
-                <Button
-                  onClick={() => handlePaymentSelection('cod')}
-                  disabled={checkoutLoading}
-                  variant="outline"
-                  className="w-full h-12 rounded-xl border-2 border-orange-600 text-orange-700 hover:bg-orange-600 hover:text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
-                >
-                  {checkoutLoading ? (
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="w-5 h-5 border-2 border-orange-600 border-t-transparent rounded-full animate-spin"></div>
-                      Processing...
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center gap-2">
-                      <Truck className="w-5 h-5" />
-                      <div className="text-left">
-                        <div className="text-sm">Cash on Delivery</div>
-                        <div className="text-xs opacity-90">₹{totalPrice.toLocaleString()}</div>
-                      </div>
-                    </div>
-                  )}
-                </Button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
+      {/* THIS WAS THE SYNTAX FIX */}
       </AnimatePresence>
 
-      {/* Phone Verification Modal */}
+      {/* PHONE MODAL */}
       <PhoneVerificationModal
         showPhoneVerification={phoneVerification.showPhoneVerification}
         phoneNumber={phoneVerification.phoneNumber}

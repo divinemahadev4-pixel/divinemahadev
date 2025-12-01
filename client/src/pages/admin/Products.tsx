@@ -44,6 +44,7 @@ interface ProductType {
   Product_available: boolean;
   isHamper_product: boolean;
   Product_public_id: string;
+  colorVariants?: { colorName: string; colorCode?: string; imageIndexes: number[] }[];
 }
 
 type AvailabilityFilter = "all" | "available" | "unavailable";
@@ -202,6 +203,7 @@ export default function Products() {
               typeof data.isAvailable === "boolean"
                 ? data.isAvailable
                 : productToEdit.Product_available,
+            colorVariants: Array.isArray(data.colorVariants) ? data.colorVariants : productToEdit.colorVariants || [],
           },
           { withCredentials: true, headers: adminToken ? { Authorization: `Bearer ${adminToken}` } : {} }
         );
@@ -221,6 +223,7 @@ export default function Products() {
                     typeof data.isAvailable === "boolean"
                       ? data.isAvailable
                       : p.Product_available,
+                  colorVariants: Array.isArray(data.colorVariants) ? data.colorVariants : (p as any).colorVariants,
                 }
               : p
           )
@@ -240,6 +243,7 @@ export default function Products() {
             Product_available: data.isAvailable ?? true,
             isHamper_product: data.isHamperProduct ?? false,
             Product_public_id: "",
+            colorVariants: Array.isArray(data.colorVariants) ? data.colorVariants : [],
           },
           { withCredentials: true, headers: adminToken ? { Authorization: `Bearer ${adminToken}` } : {} }
         );
@@ -343,6 +347,7 @@ export default function Products() {
                           productToEdit.Product_category?.category,
                         images: productToEdit.Product_image,
                         isAvailable: productToEdit.Product_available,
+                        colorVariants: (productToEdit as any).colorVariants || [],
                       }
                     : undefined
                 }

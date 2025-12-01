@@ -404,10 +404,11 @@ const getProducts = async (req, res) => {
       skipValue = (Number(page) - 1) * Number(limit);
     }
 
-    console.log(`📊 Backend: Using skip=${skipValue}, limit=${limit}, query:`, query);
+    console.log(` Backend: Using skip=${skipValue}, limit=${limit}, query:`, query);
 
-    // ✅ Select appropriate fields based on product type
-    let selectFields = 'Product_name Product_price discounted_price Product_discription Product_image Product_category Product_available';
+    // Select appropriate fields based on product type
+    let selectFields = 'Product_name Product_price discounted_price Product_discription Product_image Product_category Product_available colorVariants';
+
     if (type === 'hamper') {
       selectFields += ' isHamper_product Hamper_price';
     }
