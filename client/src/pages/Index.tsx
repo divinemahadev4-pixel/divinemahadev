@@ -12,8 +12,10 @@ import image2 from "../utils/image2.jpg"
 import image_phone from "../utils/image_phone.jpg"
 import footer_image from "../utils/footer_image.png"
 import phone_image from "../utils/phone_image.jpg"
-import phone_image2 from "../utils/phone_image2.jpg"
+import phone_image2 from "../utils/india image 2.jpg"
 import india_image from "../utils/india image.png"
+import desktop_image from "../utils/desktop_india.png"
+import phone_image_top from "../utils/phone_image_top.jpg"
 
 const Index = () => {
   return (
@@ -30,7 +32,7 @@ const Index = () => {
         {/* Scroll-zoom hero image after Divine Collection */}
         <ScrollZoomHero
           imageSrc={footer_image}
-          mobileImageSrc={phone_image2}
+          mobileImageSrc={phone_image_top}
           alt="100+ products for your spiritual journey"
         />
 
@@ -39,8 +41,8 @@ const Index = () => {
         <AboutSection />
         {/* Second scroll-zoom hero image after Divine Products */}
         <ScrollZoomHero
-          imageSrc={footer_image}
-          mobileImageSrc={india_image}
+          imageSrc={desktop_image}
+          mobileImageSrc={phone_image2}
         />
         <ServiceHighlights />
         <Footer />
