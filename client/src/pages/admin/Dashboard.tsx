@@ -590,7 +590,7 @@ export default function Dashboard() {
             <option value="failed">Failed</option>
           </select>
         </CardHeader>
-        <CardContent>
+        <CardContent className="max-h-[420px] overflow-y-auto">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -605,7 +605,7 @@ export default function Dashboard() {
               </TableHeader>
               <TableBody>
                 {filteredOrders.length > 0 ? (
-                  filteredOrders.slice(0, 5).map((order) => (
+                  filteredOrders.map((order) => (
                     <TableRow key={order._id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                       <TableCell>
                         <div className="text-gray-900 dark:text-white font-medium">
@@ -657,7 +657,7 @@ export default function Dashboard() {
         <CardHeader>
           <CardTitle>Active Shopping Carts</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="max-h-[420px] overflow-y-auto">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -670,7 +670,7 @@ export default function Dashboard() {
               </TableHeader>
               <TableBody>
                 {carts.length > 0 ? (
-                  carts.slice(0, 5).map((cart) => (
+                  carts.map((cart) => (
                     <TableRow key={cart.userId?._id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                       <TableCell>
                         <div className="text-gray-900 dark:text-white font-medium">

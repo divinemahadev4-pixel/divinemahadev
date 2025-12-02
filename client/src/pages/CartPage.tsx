@@ -32,12 +32,17 @@ const CartPage = () => {
     pinCode: "",
     phone: ""
   });
+  const [pinLookupLoading, setPinLookupLoading] = useState(false);
 
   const getProductId = (item: any) => item._id || item.id;
   const totalPrice = getCartTotal();
 
-  const calculateOnlineDiscount = (amount: number) => amount * 0.15;
-  const getOnlineDiscountedPrice = (amount: number) => amount - calculateOnlineDiscount(amount);
+  const calculateOnlineDiscount = (amount: number) => 50;
+  const getOnlineDiscountedPrice = (amount: number) => Math.max(1, Math.round(amount) - 50);
+
+  const codTotal = Math.max(1, Math.round(totalPrice));
+  const onlineTotal = getOnlineDiscountedPrice(totalPrice);
+  const onlineDiscountAmount = codTotal - onlineTotal;
 
   useEffect(() => {
     if (phoneVerification.phoneVerified) {
@@ -49,10 +54,86 @@ const CartPage = () => {
     }
   }, [phoneVerification.phoneVerified, phoneVerification.phoneNumber]);
 
-  const handleInputChange = (e: any) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setShippingAddress(prev => ({ ...prev, [name]: value }));
+
+    if (name === "pinCode") {
+      const cleanValue = value.replace(/\D/g, "").slice(0, 6);
+
+      setShippingAddress(prev => ({
+        ...prev,
+        pinCode: cleanValue,
+      }));
+
+      if (cleanValue.length === 6) {
+        fetchAddressFromPincode(cleanValue);
+      }
+
+      return;
+    }
+
+    setShippingAddress(prev => ({
+      ...prev,
+      [name]: value,
+    }));
   };
+
+  async function fetchAddressFromPincode(pin: string) {
+    try {
+      setPinLookupLoading(true);
+
+      const res = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
+      const data: any = await res.json();
+
+      if (!Array.isArray(data) || !data[0] || data[0].Status !== "Success") {
+        toast({
+          title: "Invalid PIN Code",
+          description: "Please enter a valid 6-digit Indian PIN code.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const postOffice = Array.isArray(data[0].PostOffice) ? data[0].PostOffice[0] : null;
+
+      if (!postOffice) {
+        toast({
+          title: "PIN Code Not Found",
+          description: "We could not find city and state for this PIN. Please fill them manually.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const city = postOffice.District || postOffice.Block || postOffice.Name || "";
+      const state = postOffice.State || "";
+
+      if (!city || !state) {
+        toast({
+          title: "Incomplete Address Info",
+          description: "City or state information is missing for this PIN. Please fill them manually.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setShippingAddress(prev => ({
+        ...prev,
+        city,
+        state,
+        pinCode: pin,
+      }));
+    } catch (error) {
+      console.error("PIN code lookup failed", error);
+      toast({
+        title: "PIN Code Lookup Failed",
+        description: "Unable to fetch city and state. Please fill them manually.",
+        variant: "destructive",
+      });
+    } finally {
+      setPinLookupLoading(false);
+    }
+  }
   const handleQuantityChange = (productId: number | string, newQuantity: number) => {
     if (newQuantity < 1) {
       removeCart(productId);
@@ -106,12 +187,12 @@ const CartPage = () => {
     }));
 
     const deliveryCharge = 0;
-    let finalAmount = totalPrice + deliveryCharge;
+    let finalAmount = codTotal;
     let discountAmount = 0;
 
     if (paymentMethod === "online") {
-      discountAmount = calculateOnlineDiscount(totalPrice);
-      finalAmount = getOnlineDiscountedPrice(totalPrice);
+      discountAmount = onlineDiscountAmount;
+      finalAmount = onlineTotal;
     }
 
     const success = await processPayment(
@@ -166,7 +247,6 @@ const CartPage = () => {
         {/* ---------------- MAIN PAGE CONTENT ---------------- */}
         <div className="container mx-auto max-w-6xl">
 
-          {/* --- HEADER --- */}
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
             <div className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-100 to-amber-50 text-orange-700 px-4 py-2 rounded-full text-sm font-semibold mb-4 border border-orange-200">
               <Sparkles className="w-4 h-4" />
@@ -176,10 +256,8 @@ const CartPage = () => {
             <p className="text-orange-600">Review your selected sacred items</p>
           </motion.div>
 
-          {/* GRID: ITEMS + SUMMARY */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-            {/* CART ITEMS */}
             <div className="lg:col-span-2 space-y-4">
               {cart.map((item, index) => (
                 <motion.div
@@ -243,7 +321,6 @@ const CartPage = () => {
               ))}
             </div>
 
-            {/* ORDER SUMMARY CARD */}
             <div className="lg:col-span-1">
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
                 className="bg-white rounded-xl border border-orange-200 shadow-xl p-6 sticky top-24">
@@ -263,13 +340,12 @@ const CartPage = () => {
                     <span className="font-semibold text-green-600">FREE</span>
                   </div>
 
-                  {/* DISCOUNT BOX */}
                   <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                     <div className="flex justify-between mb-1 text-xs text-green-700">
-                      <div className="flex items-center gap-2"><CreditCard className="w-4 h-4" /> Extra 15% OFF (Online)</div>
-                      <span>-₹{calculateOnlineDiscount(totalPrice).toLocaleString()}</span>
+                      <div className="flex items-center gap-2"><CreditCard className="w-4 h-4" /> Pay Online & Save</div>
+                      <span>-₹{onlineDiscountAmount.toLocaleString()}</span>
                     </div>
-                    <p className="text-xs text-green-600">Save more with online payment</p>
+                    <p className="text-xs text-green-600">Pay securely online and save ₹{onlineDiscountAmount.toLocaleString()} on this order</p>
                   </div>
                 </div>
 
@@ -281,14 +357,12 @@ const CartPage = () => {
             </div>
           </div>
 
-          {/* SHIPPING FORM + PAYMENT BUTTONS */}
           <div className="bg-orange-50 rounded-xl p-4 mb-6 border border-orange-200 mt-6">
 
             <h3 className="font-semibold text-orange-900 mb-3 text-sm flex items-center gap-2">
               <ShoppingBag className="w-4 h-4" /> Order Summary ({cart.length} items)
             </h3>
 
-            {/* SHIPPING INFO */}
             <div className="space-y-4 mt-4">
               <h3 className="font-semibold text-orange-900 text-lg">Shipping Information</h3>
 
@@ -320,15 +394,28 @@ const CartPage = () => {
 
                 <div className="space-y-2">
                   <Label>PIN Code</Label>
-                  <Input name="pinCode" value={shippingAddress.pinCode} onChange={handleInputChange} />
+                  <Input name="pinCode" value={shippingAddress.pinCode} onChange={handleInputChange} maxLength={6} />
+                  {pinLookupLoading && (
+                    <p className="text-xs text-orange-500 mt-1">Fetching city and state for this PIN...</p>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* PAYMENT BUTTONS */}
             <div className="bg-white border-t border-orange-200 p-6 space-y-3 rounded-b-2xl mt-6">
+              <div className="text-sm mb-2">
+                <div className="flex justify-between mb-1">
+                  <span className="text-orange-700 font-medium">Cash on Delivery</span>
+                  <span className="font-semibold text-orange-900">₹{codTotal.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-xs mt-1">
+                  <span className="text-green-700 font-medium">Pay Online (Save ₹{onlineDiscountAmount.toLocaleString()})</span>
+                  <span className="font-semibold text-green-700">₹{onlineTotal.toLocaleString()}</span>
+                </div>
+              </div>
+
               <Button onClick={() => handlePaymentSelection("online")} className="w-full h-12 bg-green-600 text-white rounded-xl">
-                <CreditCard className="w-5 h-5" /> Pay Online & Save 15%
+                <CreditCard className="w-5 h-5" /> Pay Online & Save ₹{onlineDiscountAmount.toLocaleString()}
               </Button>
 
               <Button onClick={() => handlePaymentSelection("cod")} variant="outline" className="w-full h-12 border-orange-600 text-orange-700 rounded-xl">

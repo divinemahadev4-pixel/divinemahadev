@@ -1157,30 +1157,31 @@ const ProductDetailPage: React.FC = () => {
                       <h4 className="font-semibold text-gray-900 mb-4 text-base">Product Details</h4>
                       <div className="space-y-3">
                         {[
+                          { label: "Name", value: product.Product_name },
                           { label: "Category", value: product.Product_category.category },
-                          { label: "Material", value: product.material || "Not specified" },
-                          {
-                            label: "Warranty",
-                            value:
-                              product.warrantyMonths && product.warrantyMonths > 0
-                                ? `${product.warrantyMonths} Months`
-                                : "No warranty",
-                          },
-                          {
-                            label: "Return Policy",
-                            value:
-                              product.returnPolicy ||
-                              "Refer to Refund & Return policy or product description",
-                          }
-                        ].map((spec, idx) => (
-                          <div
-                            key={idx}
-                            className="flex justify-between py-2 border-b border-amber-100"
-                          >
-                            <span className="font-medium text-gray-600 text-sm">{spec.label}</span>
-                            <span className="font-semibold text-gray-900 text-sm">{spec.value}</span>
-                          </div>
-                        ))}
+                          product.material
+                            ? { label: "Material", value: product.material }
+                            : null,
+                          product.warrantyMonths && product.warrantyMonths > 0
+                            ? { label: "Warranty", value: `${product.warrantyMonths} Months` }
+                            : null,
+                          product.returnPolicy
+                            ? { label: "Return Policy", value: product.returnPolicy }
+                            : null,
+                        ]
+                          .filter(Boolean)
+                          .map((spec, idx) => {
+                            const item = spec as { label: string; value: string };
+                            return (
+                              <div
+                                key={idx}
+                                className="flex justify-between py-2 border-b border-amber-100"
+                              >
+                                <span className="font-medium text-gray-600 text-sm">{item.label}</span>
+                                <span className="font-semibold text-gray-900 text-sm">{item.value}</span>
+                              </div>
+                            );
+                          })}
                       </div>
                     </div>
                     <div>
