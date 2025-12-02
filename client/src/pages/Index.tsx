@@ -32,7 +32,7 @@ const Index = () => {
         {/* Scroll-zoom hero image after Divine Collection */}
         <ScrollZoomHero
           imageSrc={footer_image}
-          mobileImageSrc={"https://www.divinehindu.in/cdn/shop/files/Rudraksha_Banner.jpg?v=1745046853&width=200"}
+          mobileImageSrc={"https://www.divinehindu.in/cdn/shop/files/Rudraksha_Banner.jpg?v=1745046853&width=1000"}
           alt="100+ products for your spiritual journey"
         />
 
