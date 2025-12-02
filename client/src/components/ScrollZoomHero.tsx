@@ -75,11 +75,11 @@ const ScrollZoomHero: React.FC<ScrollZoomHeroProps> = ({ imageSrc, mobileImageSr
   return (
     <section
       ref={containerRef}
-      className="relative w-full overflow-hidden py-2 md:py-3 bg-[#FFFBF7]"
+      className="relative w-full overflow-hidden pt-4 md:pt-2 md:pb-2 bg-[#FFFBF7]"
     >
       <div
         className="relative w-full"
-        style={{ aspectRatio: "21 / 10" }}
+        style={{ aspectRatio: "21 / 8" }}
       >
         {/* Desktop image */}
         <img

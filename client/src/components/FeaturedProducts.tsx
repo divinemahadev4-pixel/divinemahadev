@@ -479,7 +479,7 @@ const FeaturedProducts: React.FC = () => {
 
   return (
     <>
-      <section className="relative pt-4 md:pt-6 pb-0 md:pb-0 bg-white">
+      <section className="relative pt-2 md:pt-4 pb-0 md:pb-0 bg-white">
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6">
           <motion.header
             className="mb-10 text-center max-w-4xl mx-auto"

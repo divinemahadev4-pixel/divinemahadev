@@ -11,7 +11,7 @@ const AboutSection = () => {
   const ujjainMahakal = "https://images.unsplash.com/photo-1587132137056-4c6e318b9856?w=600&h=700&fit=crop&crop=center";
   const shivlingImage = "https://tse1.mm.bing.net/th/id/OIP.tHQ6SUrbkhuHAkJJZ4q12AAAAA?cb=ucfimg2&pid=ImgDet&ucfimg=1&w=203&h=276&c=7&dpr=1.3&o=7&rm=3"
   return (
-    <section className="relative py-24 overflow-hidden bg-gradient-to-br from-white via-orange-50 to-amber-50/30">
+    <section className="relative pt-10 overflow-hidden bg-gradient-to-br from-white via-orange-50 to-amber-50/30">
       {/* Spiritual decorative elements */}
       <div className="absolute -top-20 -left-20 w-64 h-64 rounded-full bg-orange-200/20 blur-3xl"></div>
       <div className="absolute -bottom-40 -right-20 w-72 h-72 rounded-full bg-amber-200/20 blur-3xl"></div>
