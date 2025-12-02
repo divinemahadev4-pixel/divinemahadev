@@ -109,6 +109,7 @@ const ProductDetailPage: React.FC = () => {
     phone: "",
   });
   const [directCheckoutLoading, setDirectCheckoutLoading] = useState(false);
+  const [pinLookupLoading, setPinLookupLoading] = useState(false);
 
   // Reviews state
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -379,11 +380,84 @@ const ProductDetailPage: React.FC = () => {
   ) => {
     const { name, value } = e.target;
     const fieldName = name as keyof ShippingAddress;
+
+    if (fieldName === "pinCode") {
+      const cleanValue = value.replace(/\D/g, "").slice(0, 6);
+
+      setShippingAddress((prev) => ({
+        ...prev,
+        pinCode: cleanValue,
+      }));
+
+      if (cleanValue.length === 6) {
+        fetchAddressFromPincode(cleanValue);
+      }
+
+      return;
+    }
+
     setShippingAddress((prev) => ({
       ...prev,
       [fieldName]: value,
     }));
   };
+
+  async function fetchAddressFromPincode(pin: string) {
+    try {
+      setPinLookupLoading(true);
+
+      const res = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
+      const data: any = await res.json();
+
+      if (!Array.isArray(data) || !data[0] || data[0].Status !== "Success") {
+        toast({
+          title: "Invalid PIN Code",
+          description: "Please enter a valid 6-digit Indian PIN code.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const postOffice = Array.isArray(data[0].PostOffice) ? data[0].PostOffice[0] : null;
+
+      if (!postOffice) {
+        toast({
+          title: "PIN Code Not Found",
+          description: "We could not find city and state for this PIN. Please fill them manually.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const city = postOffice.District || postOffice.Block || postOffice.Name || "";
+      const state = postOffice.State || "";
+
+      if (!city || !state) {
+        toast({
+          title: "Incomplete Address Info",
+          description: "City or state information is missing for this PIN. Please fill them manually.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setShippingAddress((prev) => ({
+        ...prev,
+        city,
+        state,
+        pinCode: pin,
+      }));
+    } catch (error) {
+      console.error("PIN code lookup failed", error);
+      toast({
+        title: "PIN Code Lookup Failed",
+        description: "Unable to fetch city and state. Please fill them manually.",
+        variant: "destructive",
+      });
+    } finally {
+      setPinLookupLoading(false);
+    }
+  }
 
   const handleDirectBuy = () => {
     if (!product) return;
@@ -1598,6 +1672,11 @@ const ProductDetailPage: React.FC = () => {
                         className="mt-1 w-full border border-amber-200 rounded-lg px-3 py-2 text-sm focus-visible:ring-amber-500"
                         placeholder="PIN Code"
                       />
+                      {pinLookupLoading && (
+                        <p className="text-[11px] text-amber-600 mt-1">
+                          Detecting city and state from PIN...
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -601,19 +601,40 @@ const Orders = () => {
                     typeof it.productId === "object" && it.productId
                       ? (it.productId as any)
                       : null;
-                  const basePrice =
-                    typeof prod?.Product_price === "number"
-                      ? prod.Product_price
-                      : it.price;
+                  const sellingPrice = it.price || 0;
+
+                  let basePrice = sellingPrice;
+                  if (
+                    typeof prod?.discounted_price === "number" &&
+                    prod.discounted_price > sellingPrice
+                  ) {
+                    basePrice = prod.discounted_price;
+                  } else if (
+                    typeof prod?.Product_price === "number" &&
+                    prod.Product_price > sellingPrice
+                  ) {
+                    basePrice = prod.Product_price;
+                  }
+
                   originalMrpTotal += basePrice * (it.quantity || 0);
                 });
+
                 const productSavings =
                   originalMrpTotal > itemsTotal
                     ? originalMrpTotal - itemsTotal
                     : 0;
+                const originalGrandTotal = originalMrpTotal + deliveryCharge;
 
                 return (
                   <div className="border border-orange-100 rounded-xl p-3 bg-orange-50/40 space-y-1 text-[11px] text-orange-800">
+                    {productSavings > 0 && (
+                      <div className="flex items-center justify-between text-orange-500 mb-0.5">
+                        <span>Original total (MRP)</span>
+                        <span className="line-through">
+                          ₹{originalGrandTotal.toFixed(2)}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex items-center justify-between">
                       <span>Items subtotal</span>
                       <span className="font-semibold">
@@ -638,7 +659,7 @@ const Orders = () => {
                     )}
                     <div className="border-t border-orange-100 pt-1 mt-1 flex items-center justify-between font-semibold text-[12px]">
                       <span className="text-orange-900">Grand total</span>
-                      <span className="text-orange-800">
+                      <span className="text-orange-900 font-bold">
                         ₹{selectedOrder.totalAmount.toFixed(2)}
                       </span>
                     </div>
@@ -648,19 +669,34 @@ const Orders = () => {
 
               {/* Status checkpoints timeline (like Amazon) */}
               {(() => {
-                const st = orderStatus[selectedOrder.status];
-                const steps: OrderState[] = ["pending", "processing", "shipped", "delivered"];
+                const st = orderStatus[selectedOrder.status as OrderState];
+                const steps = [
+                  { id: "ordered", label: "Ordered" },
+                  { id: "shipped", label: "Shipped" },
+                  { id: "outForDelivery", label: "Out for delivery" },
+                  { id: "delivered", label: "Delivered" },
+                ] as const;
 
                 const currentRaw = selectedOrder.status as OrderState;
-                const currentIndex = (() => {
-                  const idx = steps.indexOf(currentRaw);
-                  if (idx >= 0) return idx;
-                  // For cancelled / failed, keep at first step but label will show the real status
-                  return 0;
-                })();
+                const statusToIndex: Record<OrderState, number> = {
+                  pending: 0,
+                  processing: 1,
+                  shipped: 2,
+                  delivered: 3,
+                  cancelled: 0,
+                  failed: 0,
+                };
+                const currentIndex = statusToIndex[currentRaw] ?? 0;
 
                 const progressPercent =
                   steps.length > 1 ? (currentIndex / (steps.length - 1)) * 100 : 0;
+
+                const raw: any = selectedOrder;
+                const processingAt = raw?.processingAt as string | undefined;
+                const shippedAt = raw?.shippedAt as string | undefined;
+                const deliveredAt = raw?.deliveredAt as string | undefined;
+                const updatedAt = raw?.updatedAt as string | undefined;
+                const cancelledAt = raw?.cancelledAt as string | undefined;
 
                 return (
                   <div className="space-y-2">
@@ -692,19 +728,63 @@ const Orders = () => {
                             : "bg-white border-orange-200 text-orange-300";
 
                           return (
-                            <div key={step} className="flex flex-col items-center gap-1 py-1">
+                            <div key={step.id} className="flex flex-col items-center gap-1 py-1">
                               <div
                                 className={`relative z-10 flex items-center justify-center w-6 h-6 rounded-full border text-[11px] font-semibold shadow-sm ${circleClasses}`}
                               >
                                 {idx + 1}
                               </div>
                               <span className="text-[10px] text-orange-700 capitalize">
-                                {orderStatus[step].label}
+                                {step.label}
                               </span>
                             </div>
                           );
                         })}
                       </div>
+                    </div>
+
+                    {/* Status timestamps (shown only when available) */}
+                    <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-[10px] text-orange-700">
+                      <span className="font-medium">Order placed</span>
+                      <span className="text-right">
+                        {formatDate(selectedOrder.createdAt)} • {formatTime(selectedOrder.createdAt)}
+                      </span>
+
+                      {processingAt && (
+                        <>
+                          <span className="font-medium">Processing</span>
+                          <span className="text-right">
+                            {formatDate(processingAt)} • {formatTime(processingAt)}
+                          </span>
+                        </>
+                      )}
+
+                      {shippedAt && (
+                        <>
+                          <span className="font-medium">Shipped</span>
+                          <span className="text-right">
+                            {formatDate(shippedAt)} • {formatTime(shippedAt)}
+                          </span>
+                        </>
+                      )}
+
+                      {deliveredAt && (
+                        <>
+                          <span className="font-medium text-green-700">Delivered</span>
+                          <span className="text-right text-green-700">
+                            {formatDate(deliveredAt)} • {formatTime(deliveredAt)}
+                          </span>
+                        </>
+                      )}
+
+                      {!deliveredAt && (cancelledAt || updatedAt) && (
+                        <>
+                          <span className="font-medium">Last update</span>
+                          <span className="text-right">
+                            {formatDate(cancelledAt || updatedAt!)} • {formatTime(cancelledAt || updatedAt!)}
+                          </span>
+                        </>
+                      )}
                     </div>
 
                     {(currentRaw === "cancelled" || currentRaw === "failed") && (
