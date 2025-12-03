@@ -24,6 +24,8 @@ interface Product {
   Product_name?: string;
   Product_price?: number;
   Product_image?: string[];
+  // Optional per-product delivery
+  deliveryCharge?: number;
   // Optional color variant metadata
   variantIndex?: number;
   colorName?: string;
@@ -41,6 +43,7 @@ interface BackendCartItem {
       category: string;
     };
     Product_available: boolean;
+    deliveryCharge?: number;
   };
   quantity: number;
   // These fields live on the cart item itself, not the product ref
@@ -117,6 +120,10 @@ const convertBackendItemToProduct = (item: BackendCartItem): Product | null => {
     Product_image: item.productId.Product_image || [],
     isNew: false,
     quantity: item.quantity || 1,
+    deliveryCharge:
+      typeof item.productId.deliveryCharge === "number"
+        ? item.productId.deliveryCharge
+        : undefined,
     // Preserve any variant metadata stored on the cart item
     variantIndex: typeof item.variantIndex === 'number' ? item.variantIndex : undefined,
     colorName: item.colorName,

@@ -161,6 +161,12 @@ const SaveProduct = async (req, res) => {
       Product_public_id: req.body.Product_public_id || "undcnwe ic jwdn cjw ncjkw cjw",
       Product_slug: category.slug,
       discounted_price: finalDiscountedPrice,
+      deliveryCharge:
+        req.body.deliveryCharge !== undefined &&
+        req.body.deliveryCharge !== null &&
+        req.body.deliveryCharge !== ""
+          ? Number(req.body.deliveryCharge)
+          : 0,
       // Optional color variants for per-color images
       colorVariants: Array.isArray(req.body.colorVariants)
         ? req.body.colorVariants
@@ -578,6 +584,7 @@ const updateProduct = async (req, res) => {
       material,
       warrantyMonths,
       returnPolicy,
+      deliveryCharge,
     } = req.body;
     const response = await Product.findById(id);
     if (!response) throw new Error("invalid product");
@@ -616,6 +623,10 @@ const updateProduct = async (req, res) => {
 
     if (typeof returnPolicy === "string") {
       response.returnPolicy = returnPolicy;
+    }
+
+    if (deliveryCharge !== undefined && deliveryCharge !== null && deliveryCharge !== "") {
+      response.deliveryCharge = Number(deliveryCharge);
     }
 
     // Optionally update category and availability if provided

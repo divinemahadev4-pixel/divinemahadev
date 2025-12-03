@@ -31,6 +31,7 @@ interface ProductFormProps {
     description?: string;
     price?: number | string;
     discounted_price?: number | string | null;
+    deliveryCharge?: number | string | null;
     categoryId?: string;
     images?: string[];
     isAvailable?: boolean;
@@ -59,6 +60,11 @@ const ProductForm: React.FC<ProductFormProps> = ({
   const [discountedPrice, setDiscountedPrice] = useState(
     initialData?.discounted_price !== undefined && initialData?.discounted_price !== null
       ? String(initialData.discounted_price)
+      : ""
+  );
+  const [deliveryCharge, setDeliveryCharge] = useState(
+    initialData?.deliveryCharge !== undefined && initialData?.deliveryCharge !== null
+      ? String(initialData.deliveryCharge)
       : ""
   );
   const [category, setCategory] = useState(
@@ -132,6 +138,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
         description,
         price,
         discounted_price: discountedPrice || null,
+        deliveryCharge: deliveryCharge || null,
         category,
         images,
         isAvailable,
@@ -154,6 +161,11 @@ const ProductForm: React.FC<ProductFormProps> = ({
       setDiscountedPrice(
         initialData?.discounted_price !== undefined && initialData?.discounted_price !== null
           ? String(initialData.discounted_price)
+          : ""
+      );
+      setDeliveryCharge(
+        initialData?.deliveryCharge !== undefined && initialData?.deliveryCharge !== null
+          ? String(initialData.deliveryCharge)
           : ""
       );
       setCategory(initialData?.categoryId || categories[0]?.id || "");
@@ -218,6 +230,21 @@ const ProductForm: React.FC<ProductFormProps> = ({
                 min={0}
                 step="0.01"
                 placeholder="e.g. 799"
+                className="h-10"
+              />
+            </div>
+
+            {/* Delivery Charge */}
+            <div className="space-y-2">
+              <Label htmlFor="delivery-charge">Delivery Charge (₹)</Label>
+              <Input
+                id="delivery-charge"
+                type="number"
+                value={deliveryCharge}
+                onChange={(e) => setDeliveryCharge(e.target.value)}
+                min={0}
+                step="0.01"
+                placeholder="e.g. 49 (leave empty for free delivery)"
                 className="h-10"
               />
             </div>

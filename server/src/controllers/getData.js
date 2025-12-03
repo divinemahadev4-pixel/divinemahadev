@@ -325,11 +325,6 @@ const getCategories = async (req, res) => {
 //   } catch (e) {
 //     console.error("❌ Backend error in getProducts:", e);
 //     res.status(400).json({
-//       message: "failed: " + e.message,
-//     });
-//   }
-// };
-
 const getProducts = async (req, res) => {
   try {
     const {
@@ -342,19 +337,21 @@ const getProducts = async (req, res) => {
       page = 1,
       limit = 12,
       skip = 0,
-      type // ✅ Add type parameter for hamper filtering
+      type, // optional: 'hamper' for hamper builder
     } = req.query;
 
-    console.log(`🔄 Backend: getProducts called with limit=${limit}, skip=${skip}, page=${page}, type=${type}`);
+    console.log(
+      `🔄 Backend: getProducts called with limit=${limit}, skip=${skip}, page=${page}, type=${type}`
+    );
 
     const query = {};
 
-    // ✅ Step 1: Hamper filtering (add this FIRST)
-    if (type === 'hamper') {
+    // Step 1: Hamper filtering (if requested)
+    if (type === "hamper") {
       query.isHamper_product = true;
       query.Product_available = true;
       query.Hamper_price = { $gt: 0 };
-      console.log('🎁 Filtering for hamper-eligible products');
+      console.log("🎁 Filtering for hamper-eligible products");
     } else {
       // For regular products, just ensure they're available
       query.Product_available = true;
@@ -368,7 +365,7 @@ const getProducts = async (req, res) => {
       ];
     }
 
-    // ✅ Step 3: Category filtering using slug
+    // Step 3: Category filter via slug
     if (category) {
       const categoryDoc = await Category.findOne({ slug: category });
       if (!categoryDoc) {
@@ -377,9 +374,9 @@ const getProducts = async (req, res) => {
       query.Product_category = categoryDoc._id;
     }
 
-    // Step 4: Price range (use appropriate price field for hamper products)
+    // Step 4: Price range (use correct price field)
     if (minPrice || maxPrice) {
-      const priceField = type === 'hamper' ? 'Hamper_price' : 'Product_price';
+      const priceField = type === "hamper" ? "Hamper_price" : "Product_price";
       query[priceField] = {};
       if (minPrice) query[priceField].$gte = Number(minPrice);
       if (maxPrice) query[priceField].$lte = Number(maxPrice);
@@ -388,15 +385,14 @@ const getProducts = async (req, res) => {
     // Step 5: Sorting
     const sortOptions = {};
     if (sortBy) {
-      // ✅ Adjust sort field for hamper products
       let sortField = sortBy;
-      if (type === 'hamper' && sortBy === 'Product_price') {
-        sortField = 'Hamper_price';
+      if (type === "hamper" && sortBy === "Product_price") {
+        sortField = "Hamper_price";
       }
       sortOptions[sortField] = sortOrder === "desc" ? -1 : 1;
     }
 
-    // ✅ Step 6: Improved Pagination
+    // Step 6: Pagination
     let skipValue = 0;
     if (skip && Number(skip) > 0) {
       skipValue = Number(skip);
@@ -406,11 +402,12 @@ const getProducts = async (req, res) => {
 
     console.log(` Backend: Using skip=${skipValue}, limit=${limit}, query:`, query);
 
-    // Select appropriate fields based on product type
-    let selectFields = 'Product_name Product_price discounted_price Product_discription Product_image Product_category Product_available colorVariants';
+    // Step 7: Select fields (include deliveryCharge for all products)
+    let selectFields =
+      "Product_name Product_price discounted_price Product_discription Product_image Product_category Product_available colorVariants deliveryCharge";
 
-    if (type === 'hamper') {
-      selectFields += ' isHamper_product Hamper_price';
+    if (type === "hamper") {
+      selectFields += " isHamper_product Hamper_price";
     }
 
     const products = await Product.find(query)
@@ -423,33 +420,30 @@ const getProducts = async (req, res) => {
 
     const total = await Product.countDocuments(query);
 
-    // ✅ Transform products for consistent response (especially for hamper products)
-    const transformedProducts = products.map(product => ({
+    const transformedProducts = products.map((product) => ({
       ...product,
-      Product_category_name: product.Product_category?.category || 'Uncategorized'
+      Product_category_name: product.Product_category?.category || "Uncategorized",
     }));
 
     console.log(`📦 Backend: Found ${products.length} products, total: ${total}`);
 
-    // ✅ Response structure for both regular and hamper products
     res.status(200).json({
       message: "Products fetched successfully",
-      product: transformedProducts, // ✅ Keep 'product' field for compatibility with existing code
-      products: transformedProducts, // ✅ Also provide 'products' field
+      product: transformedProducts,
+      products: transformedProducts,
       totalProducts: total,
-      hasMore: (skipValue + products.length) < total,
+      hasMore: skipValue + products.length < total,
       pagination: {
         total,
         page: Number(page),
         pages: Math.ceil(total / Number(limit)),
         skip: skipValue,
-        limit: Number(limit)
+        limit: Number(limit),
       },
-      // ✅ Add metadata for hamper requests
-      ...(type === 'hamper' && {
+      ...(type === "hamper" && {
         hamperProductsCount: total,
-        isHamperRequest: true
-      })
+        isHamperRequest: true,
+      }),
     });
   } catch (e) {
     console.error("❌ Backend error in getProducts:", e);
@@ -458,7 +452,6 @@ const getProducts = async (req, res) => {
     });
   }
 };
-
 
 const getBanner = async (req, res) => {
   try {

@@ -44,6 +44,7 @@ interface Product {
   isNew?: boolean;
   score?: number;
   matches?: readonly any[]; 
+  deliveryCharge?: number;
 }
 
 // Spiritual Symbol Component
@@ -309,14 +310,17 @@ const SearchResults = () => {
       phone: phoneVerification.phoneNumber
     };
 
+    const perUnitDelivery = product.deliveryCharge ?? 0;
+    const totalDelivery = perUnitDelivery * 1;
+
     const success = await processPayment(
       orderItems,
       shippingAddress,
       "online",
       {
         itemsTotal: product.Product_price,
-        deliveryCharge: 0,
-        totalAmount: product.Product_price
+        deliveryCharge: totalDelivery,
+        totalAmount: product.Product_price + totalDelivery,
       }
     );
 

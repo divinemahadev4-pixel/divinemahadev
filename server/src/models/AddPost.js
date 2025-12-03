@@ -24,6 +24,11 @@ const AddPostSchema = new Schema(
       type:Number,
       required:true
     },
+    deliveryCharge: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     Product_image: [
       {
         type: String,

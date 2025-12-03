@@ -383,7 +383,7 @@ const getCart = async (req, res) => {
     let cart = await Cart.findOne({ userId: req.user._id })
       .populate({
         path: 'items.productId',
-        select: 'Product_name Product_price Product_image Product_category Product_available'
+        select: 'Product_name Product_price Product_image Product_category Product_available deliveryCharge'
       });
 
     if (!cart) {
@@ -517,7 +517,7 @@ if (product.isHamper_product) {
     // Return updated cart with populated products
     cart = await cart.populate({
       path: 'items.productId',
-      select: 'Product_name Product_price Product_image Product_category Product_available'
+      select: 'Product_name Product_price Product_image Product_category Product_available deliveryCharge'
     });
 
     // Calculate total amount (only for available products)
@@ -574,7 +574,7 @@ const updateCartItem = async (req, res) => {
     // Return updated cart
     cart = await cart.populate({
       path: 'items.productId',
-      select: 'Product_name Product_price Product_image Product_category Product_available'
+      select: 'Product_name Product_price Product_image Product_category Product_available deliveryCharge'
     });
 
     const totalAmount = cart.items.reduce((total, item) => {
@@ -681,7 +681,7 @@ const syncCart = async (req, res) => {
       let cart = await Cart.findOne({ userId: req.user._id })
         .populate({
           path: 'items.productId',
-          select: 'Product_name Product_price Product_image Product_category Product_available'
+          select: 'Product_name Product_price Product_image Product_category Product_available deliveryCharge'
         });
 
       if (!cart) {

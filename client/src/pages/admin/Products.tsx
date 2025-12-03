@@ -48,6 +48,7 @@ interface ProductType {
   material?: string;
   warrantyMonths?: number | null;
   returnPolicy?: string;
+  deliveryCharge?: number | null;
 }
 
 type AvailabilityFilter = "all" | "available" | "unavailable";
@@ -200,6 +201,7 @@ export default function Products() {
             price: Number(data.price),
             discounted_price: data.discounted_price ? Number(data.discounted_price) : null,
             hamperPrice: data.hamperPrice ? Number(data.hamperPrice) : null,
+            deliveryCharge: data.deliveryCharge ? Number(data.deliveryCharge) : null,
             Product_category: data.category || productToEdit.Product_category,
             Product_image: data.images || productToEdit.Product_image,
             Product_available:
@@ -233,6 +235,7 @@ export default function Products() {
                   material: data.material ?? ((p as any).material || ""),
                   warrantyMonths: data.warrantyMonths ? Number(data.warrantyMonths) : (p as any).warrantyMonths,
                   returnPolicy: data.returnPolicy ?? ((p as any).returnPolicy || ""),
+                  deliveryCharge: data.deliveryCharge ? Number(data.deliveryCharge) : (p as any).deliveryCharge ?? null,
                 }
               : p
           )
@@ -247,6 +250,7 @@ export default function Products() {
             Product_price: Number(data.price),
             discounted_price: data.discounted_price ? Number(data.discounted_price) : null,
             Hamper_price: data.hamperPrice ? Number(data.hamperPrice) : null,
+            deliveryCharge: data.deliveryCharge ? Number(data.deliveryCharge) : null,
             Product_image: data.images || [],
             Product_category: data.category || "",
             Product_available: data.isAvailable ?? true,
@@ -351,6 +355,7 @@ export default function Products() {
                         description: productToEdit.Product_discription,
                         price: productToEdit.Product_price,
                         discounted_price: (productToEdit as any).discounted_price ?? null,
+                        deliveryCharge: (productToEdit as any).deliveryCharge ?? null,
                         categoryId:
                           productToEdit.Product_category?.id ||
                           productToEdit.Product_category?._id ||

@@ -37,11 +37,23 @@ const CartPage = () => {
   const getProductId = (item: any) => item._id || item.id;
   const totalPrice = getCartTotal();
 
+  const getItemDeliveryCharge = (item: any) => {
+    const perUnitDelivery =
+      typeof item.deliveryCharge === "number" ? item.deliveryCharge : 0;
+    const qty = item.quantity || 1;
+    return perUnitDelivery * qty;
+  };
+
+  const totalDeliveryCharge = cart.reduce(
+    (sum, item) => sum + getItemDeliveryCharge(item),
+    0
+  );
+
   const calculateOnlineDiscount = (amount: number) => 50;
   const getOnlineDiscountedPrice = (amount: number) => Math.max(1, Math.round(amount) - 50);
 
-  const codTotal = Math.max(1, Math.round(totalPrice));
-  const onlineTotal = getOnlineDiscountedPrice(totalPrice);
+  const codTotal = Math.max(1, Math.round(totalPrice + totalDeliveryCharge));
+  const onlineTotal = getOnlineDiscountedPrice(totalPrice + totalDeliveryCharge);
   const onlineDiscountAmount = codTotal - onlineTotal;
 
   useEffect(() => {
@@ -186,7 +198,7 @@ const CartPage = () => {
       colorCode: item.colorCode,
     }));
 
-    const deliveryCharge = 0;
+    const deliveryCharge = totalDeliveryCharge;
     let finalAmount = codTotal;
     let discountAmount = 0;
 
@@ -337,7 +349,11 @@ const CartPage = () => {
 
                   <div className="flex justify-between text-sm">
                     <span className="text-orange-600">Delivery (3–5 Days)</span>
-                    <span className="font-semibold text-green-600">FREE</span>
+                    <span className="font-semibold text-orange-900">
+                      {totalDeliveryCharge > 0
+                        ? `₹${totalDeliveryCharge.toLocaleString()}`
+                        : "FREE"}
+                    </span>
                   </div>
 
                   <div className="bg-green-50 border border-green-200 rounded-lg p-3">

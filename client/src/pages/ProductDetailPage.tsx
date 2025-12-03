@@ -62,6 +62,7 @@ interface Product {
   material?: string;
   warrantyMonths?: number | null;
   returnPolicy?: string;
+  deliveryCharge?: number;
 }
 
 interface Review {
@@ -323,6 +324,7 @@ const ProductDetailPage: React.FC = () => {
       isNew: prod.isNew || false,
       quantity: qty,
       Product_available: prod.Product_available,
+      deliveryCharge: prod.deliveryCharge,
       // Optional color variant metadata
       variantIndex: variantIndex !== null ? variantIndex : undefined,
       colorName: variant?.colorName,
@@ -577,10 +579,12 @@ const ProductDetailPage: React.FC = () => {
       }
     }
 
-    // Base totals with discounts
+    // Base totals with discounts + per-product delivery charge
     const sellingPriceForPayment = buyProduct.Product_price;
     const baseItemsTotal = sellingPriceForPayment * quantity;
-    const codTotal = Math.max(1, Math.round(baseItemsTotal));
+    const perUnitDelivery = buyProduct.deliveryCharge ?? 0;
+    const totalDeliveryCharge = perUnitDelivery * quantity;
+    const codTotal = Math.max(1, Math.round(baseItemsTotal + totalDeliveryCharge));
     const onlineTotal = Math.max(1, codTotal - 50);
 
     // Derive selected variant for direct buy
@@ -629,7 +633,7 @@ const ProductDetailPage: React.FC = () => {
             country: "India",
           },
           itemsTotal: baseItemsTotal,
-          deliveryCharge: 0,
+          deliveryCharge: totalDeliveryCharge,
           totalAmount: codTotal,
           paymentMethod: "cod",
           Contact_number: shippingAddress.phone,
@@ -688,7 +692,7 @@ const ProductDetailPage: React.FC = () => {
       paymentMethod,
       {
         itemsTotal: baseItemsTotal,
-        deliveryCharge: 0,
+        deliveryCharge: totalDeliveryCharge,
         totalAmount: onlineTotal,
       },
       "cart"
@@ -710,11 +714,19 @@ const ProductDetailPage: React.FC = () => {
   const submitReview = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!product) {
-      toast({ title: "Error", description: "Product is not loaded yet", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: "Product is not loaded yet",
+        variant: "destructive",
+      });
       return;
     }
     if (!user) {
-      toast({ title: "Please login", description: "You must be logged in to add a review", variant: "destructive" });
+      toast({
+        title: "Please login",
+        description: "You must be logged in to add a review",
+        variant: "destructive",
+      });
       navigate("/login");
       return;
     }
@@ -727,7 +739,7 @@ const ProductDetailPage: React.FC = () => {
       name: nameInput.trim(),
       review: reviewText.trim(),
       rating: ratingInput,
-      product_id: product._id
+      product_id: product._id,
     };
 
     try {
@@ -737,25 +749,39 @@ const ProductDetailPage: React.FC = () => {
         const newReview: Review = {
           ...payload,
           _id: res.data?.review?._id || `${Date.now()}`,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
         };
-        setReviews(prev => [newReview, ...prev]);
+        setReviews((prev) => [newReview, ...prev]);
         setReviewText("");
         setRatingInput(5);
-        toast({ title: "Review added", description: "Thank you for your feedback" });
+        toast({
+          title: "Review added",
+          description: "Thank you for your feedback",
+        });
       } else {
         throw new Error(res.data?.message || "Failed to add review");
       }
     } catch (err: any) {
       console.error("Add review error:", err);
-      toast({ title: "Failed to add review", description: err?.response?.data?.message || err.message || "Try again", variant: "destructive" });
+      toast({
+        title: "Failed to add review",
+        description:
+          err?.response?.data?.message || err.message || "Try again",
+        variant: "destructive",
+      });
     } finally {
       setSubmittingReview(false);
     }
   };
 
   // small helper to render star input
-  const StarInput = ({ value, onChange }: { value: number; onChange: (v: number) => void }) => (
+  const StarInput = ({
+    value,
+    onChange,
+  }: {
+    value: number;
+    onChange: (v: number) => void;
+  }) => (
     <div className="flex items-center gap-1">
       {Array.from({ length: 5 }).map((_, i) => {
         const starIndex = i + 1;
@@ -764,14 +790,18 @@ const ProductDetailPage: React.FC = () => {
             key={i}
             type="button"
             onClick={() => onChange(starIndex)}
-            className={`p-1 rounded ${starIndex <= value ? "text-amber-500" : "text-amber-200"}`}
+            className={`p-1 rounded ${
+              starIndex <= value ? "text-amber-500" : "text-amber-200"
+            }`}
             aria-label={`Rate ${starIndex}`}
           >
             <Star size={18} />
           </button>
         );
       })}
-      <span className="text-sm text-amber-600 ml-2 font-semibold">{value}.0</span>
+      <span className="text-sm text-amber-600 ml-2 font-semibold">
+        {value}.0
+      </span>
     </div>
   );
 
@@ -783,8 +813,15 @@ const ProductDetailPage: React.FC = () => {
           <Star
             key={i}
             size={size}
-            className={`${i < Math.floor(rating) ? "fill-amber-400 text-amber-400" : "fill-amber-200 text-amber-200"} ${i === Math.floor(rating) && rating % 1 > 0 ? "text-amber-400" : ""
-              }`}
+            className={`${
+              i < Math.floor(rating)
+                ? "fill-amber-400 text-amber-400"
+                : "fill-amber-200 text-amber-200"
+            } ${
+              i === Math.floor(rating) && rating % 1 > 0
+                ? "text-amber-400"
+                : ""
+            }`}
           />
         ))}
       </div>
@@ -792,16 +829,27 @@ const ProductDetailPage: React.FC = () => {
   };
 
   // FIXED: Product_price is selling price, discounted_price is MRP
-  const hasDiscount = product?.discounted_price && product.discounted_price > product.Product_price;
+  const hasDiscount =
+    !!product?.discounted_price &&
+    product.discounted_price > product.Product_price;
   const sellingPrice = product?.Product_price || 0; // Selling price (lower)
   const displayPrice = sellingPrice; // Display selling price
-  const mrpPrice = hasDiscount ? product.discounted_price! : sellingPrice; // MRP (higher)
+  const mrpPrice = hasDiscount
+    ? (product!.discounted_price as number)
+    : sellingPrice; // MRP (higher)
   const discountPercentage = hasDiscount
-    ? Math.round(((product.discounted_price! - product.Product_price) / product.discounted_price!) * 100)
+    ? Math.round(
+        (((product!.discounted_price as number) - product!.Product_price) /
+          (product!.discounted_price as number)) * 100
+      )
     : 0;
-  const savings = hasDiscount ? product.discounted_price! - product.Product_price : 0;
+  const savings = hasDiscount
+    ? (product!.discounted_price as number) - product!.Product_price
+    : 0;
   const lineTotal = displayPrice * quantity;
-  const codPayableTotal = Math.max(1, Math.round(lineTotal));
+  const deliveryPerUnit = product?.deliveryCharge ?? 0;
+  const deliveryTotal = deliveryPerUnit * quantity;
+  const codPayableTotal = Math.max(1, Math.round(lineTotal + deliveryTotal));
   const onlinePayableTotal = Math.max(1, codPayableTotal - 50);
   const overallCheckoutLoading = checkoutLoading || directCheckoutLoading;
 
@@ -816,9 +864,9 @@ const ProductDetailPage: React.FC = () => {
     const baseImages = Array.isArray(product.Product_image)
       ? product.Product_image
       : [];
-    return (variant.imageIndexes || [])
-      .map((idx) => baseImages[idx])
-      .filter((img): img is string => typeof img === "string" && !!img);
+    return (variant.imageIndexes || []).map((idx) => baseImages[idx]).filter(
+      (img): img is string => typeof img === "string" && !!img
+    );
   };
 
   const currentImages: string[] = product
@@ -1029,7 +1077,7 @@ const ProductDetailPage: React.FC = () => {
                       )}
                     </div>
                     <p className="text-sm text-gray-600">
-                      Inclusive of all taxes • Free shipping • Delivery in 3–5 days • Blessed packaging
+                      Inclusive of all taxes • {deliveryPerUnit > 0 ? `Delivery ₹${deliveryPerUnit.toLocaleString()} per item` : "Free delivery"} • 3–5 days • Blessed packaging
                     </p>
                   </div>
 
@@ -1530,6 +1578,7 @@ const ProductDetailPage: React.FC = () => {
                   </div>
                   <div className="text-right space-y-1">
                     <p className="text-xs text-gray-500 font-medium">Price details</p>
+
                     {hasDiscount && (
                       <p className="text-[11px] text-gray-400 line-through">
                         MRP: ₹{(mrpPrice * quantity).toLocaleString()}
@@ -1545,7 +1594,11 @@ const ProductDetailPage: React.FC = () => {
                         </span>
                       </p>
                     )}
-                    <p className="text-[11px] text-emerald-700 font-semibold">Free Delivery in 3–5 days</p>
+                    <p className="text-[11px] text-emerald-700 font-semibold">
+                      {deliveryTotal > 0
+                        ? `Delivery ₹${deliveryTotal.toLocaleString()} in 3–5 days`
+                        : "Free Delivery in 3–5 days"}
+                    </p>
                     <p className="text-[11px] text-gray-500">Inclusive of all taxes</p>
                   </div>
                 </div>
@@ -1565,7 +1618,11 @@ const ProductDetailPage: React.FC = () => {
                     )}
                     <div className="flex items-center justify-between">
                       <span className="text-gray-600">Delivery charges</span>
-                      <span className="font-medium text-emerald-600">Free</span>
+                      <span className="font-medium text-emerald-600">
+                        {deliveryTotal > 0
+                          ? `₹${deliveryTotal.toLocaleString()}`
+                          : "Free"}
+                      </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-gray-700 font-medium">Online payment discount (Prepaid)</span>

@@ -33,6 +33,7 @@ interface Product {
   Product_available?: boolean;
   Product_rating?: number;
   Product_reviewCount?: number;
+  deliveryCharge?: number;
 }
 
 const CategoryPage = () => {
@@ -159,7 +160,8 @@ const CategoryPage = () => {
           Product_name: product.Product_name,
           Product_price: product.Product_price,
           Product_image: product.Product_image,
-          Product_available: product.Product_available
+          Product_available: product.Product_available,
+          deliveryCharge: product.deliveryCharge
         };
         
         addToCart(cartProduct);
@@ -227,14 +229,17 @@ const CategoryPage = () => {
       phone: phoneVerification.phoneNumber
     };
 
+    const perUnitDelivery = product.deliveryCharge ?? 0;
+    const totalDelivery = perUnitDelivery * 1;
+
     const success = await processPayment(
       orderItems,
       shippingAddress,
       "online",
       {
         itemsTotal: product.Product_price,
-        deliveryCharge: 0,
-        totalAmount: product.Product_price
+        deliveryCharge: totalDelivery,
+        totalAmount: product.Product_price + totalDelivery,
       }
     );
 
