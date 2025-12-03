@@ -89,6 +89,7 @@ interface ShippingAddress {
   state: string;
   pinCode: string;
   phone: string;
+  alternatePhone?: string;
 }
 
 const ProductDetailPage: React.FC = () => {
@@ -116,6 +117,7 @@ const ProductDetailPage: React.FC = () => {
     state: "",
     pinCode: "",
     phone: "",
+    alternatePhone: "",
   });
   const [directCheckoutLoading, setDirectCheckoutLoading] = useState(false);
   const [pinLookupLoading, setPinLookupLoading] = useState(false);
@@ -1187,6 +1189,13 @@ const ProductDetailPage: React.FC = () => {
                       <Button onClick={handleDirectBuy} disabled={!product.Product_available || buying} className="flex-1 h-12 text-sm font-semibold bg-gradient-to-r from-amber-600 to-orange-600 text-white">
                         {buying ? (<motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}><Sparkles className="w-4 h-4" /></motion.div>) : (<><CreditCard size={16} className="mr-2" /> Buy Now</>)}
                       </Button>
+                      <Button
+                        onClick={handleDirectBuy}
+                        disabled={!product.Product_available || buying}
+                        className="flex-1 h-12 text-sm font-semibold bg-orange-300 border border-amber-400 text-amber-700 bg-white hover:bg-amber-50"
+                      >
+                        <Truck size={16} className="mr-2" /> Cash on Delivery
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
@@ -1708,6 +1717,17 @@ const ProductDetailPage: React.FC = () => {
                         onChange={handleShippingInputChange}
                         className="mt-1 w-full border border-amber-200 rounded-lg px-3 py-2 text-sm focus-visible:ring-amber-500"
                         placeholder="Enter 10-digit phone number"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs font-medium text-gray-700">Alternate Number (Optional)</Label>
+                      <Input
+                        type="text"
+                        name="alternatePhone"
+                        value={shippingAddress.alternatePhone || ""}
+                        onChange={handleShippingInputChange}
+                        className="mt-1 w-full border border-amber-200 rounded-lg px-3 py-2 text-sm focus-visible:ring-amber-500"
+                        placeholder="Optional alternate contact number"
                       />
                     </div>
                     <div className="space-y-1 sm:col-span-2">
