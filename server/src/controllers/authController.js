@@ -205,6 +205,20 @@ const login = async (req, res) => {
       isVerified: user.isVerified
     };
 
+    // Send login notification email (non-blocking for user experience)
+    try {
+      const loginMessage = `
+        <p>Hi${user.firstName ? ` ${user.firstName}` : ''},</p>
+        <p>You have successfully logged in to your <b>AnokhiAda</b> account.</p>
+        <p>If this was not you, please reset your password immediately and contact support.</p>
+        <p>Regards,<br/>AnokhiAda Team</p>
+      `;
+
+      await sendEmail(user.email, "New Login to Your AnokhiAda Account", loginMessage);
+    } catch (emailError) {
+      console.error('Error sending login email:', emailError);
+    }
+
     res.status(200).json({
       reply: reply,
       accessToken,

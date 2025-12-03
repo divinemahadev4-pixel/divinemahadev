@@ -27,7 +27,7 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 /* Types */
-type OrderState = "pending" | "processing" | "shipped" | "delivered" | "cancelled" | "failed";
+type OrderState = "pending" | "processing" | "shipped" | "outForDelivery" | "delivered" | "cancelled" | "failed";
 type PayState = "initiated" | "pending" | "paid" | "failed";
 
 interface OrderItem {
@@ -99,10 +99,19 @@ const orderStatus = {
     icon: Truck, 
     variant: "outline" as const, 
     label: "Shipped", 
-    progress: 75,
+    progress: 65,
     bgColor: "bg-orange-50/70",
     textColor: "text-orange-700",
     borderColor: "border-orange-200"
+  },
+  outForDelivery: {
+    icon: Truck,
+    variant: "outline" as const,
+    label: "Out for delivery",
+    progress: 80,
+    bgColor: "bg-orange-50/70",
+    textColor: "text-orange-700",
+    borderColor: "border-orange-200",
   },
   delivered: { 
     icon: CheckCircle, 
@@ -505,7 +514,7 @@ const Orders = () => {
                             <div className="flex items-center gap-1 text-orange-700">
                               <CreditCard className="w-3 h-3" />
                               <span className="uppercase font-medium">
-                                {order.paymentMethod}
+                                {order.paymentMethod === "cod" ? "Cash on Delivery" : "Online Payment"}
                               </span>
                             </div>
                             
@@ -672,6 +681,7 @@ const Orders = () => {
                 const st = orderStatus[selectedOrder.status as OrderState];
                 const steps = [
                   { id: "ordered", label: "Ordered" },
+                  { id: "processing", label: "Processing" },
                   { id: "shipped", label: "Shipped" },
                   { id: "outForDelivery", label: "Out for delivery" },
                   { id: "delivered", label: "Delivered" },
@@ -682,7 +692,8 @@ const Orders = () => {
                   pending: 0,
                   processing: 1,
                   shipped: 2,
-                  delivered: 3,
+                  outForDelivery: 3,
+                  delivered: 4,
                   cancelled: 0,
                   failed: 0,
                 };

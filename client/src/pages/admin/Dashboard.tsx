@@ -585,6 +585,7 @@ export default function Dashboard() {
             <option value="pending">Pending</option>
             <option value="processing">Processing</option>
             <option value="shipped">Shipped</option>
+            <option value="outForDelivery">Out for delivery</option>
             <option value="delivered">Delivered</option>
             <option value="cancelled">Cancelled</option>
             <option value="failed">Failed</option>
@@ -771,6 +772,7 @@ export default function Dashboard() {
             
             <OrderActions
               orderId={selectedOrder._id}
+              currentStatus={selectedOrder.status}
               onClose={() => { setShowOrderDetails(false); setSelectedOrder(null); fetchDashboardData(); }}
             />
           </div>
@@ -781,13 +783,40 @@ export default function Dashboard() {
 }
 
 // OrderActions Component
-function OrderActions({ orderId, onClose }: { orderId: string; onClose: () => void }) {
+function OrderActions({
+  orderId,
+  currentStatus,
+  onClose,
+}: {
+  orderId: string;
+  currentStatus: string;
+  onClose: () => void;
+}) {
   const { toast } = useToast();
-  const [loading, setLoading] = useState<"ship" | "cancel" | "deliver" | null>(null);
+  const [loading, setLoading] = useState<"ship" | "outForDelivery" | "cancel" | "deliver" | null>(null);
 
-  const updateOrderStatus = async (status: "shipped" | "cancelled" | "delivered") => {
+  const normalizedStatus = currentStatus?.toLowerCase?.() || "";
+
+  // Flow rules:
+  // pending/processing -> shipped -> outForDelivery -> delivered
+  const canShip = ["pending", "processing"].includes(normalizedStatus);
+  const canOutForDelivery = normalizedStatus === "shipped";
+  const canDeliver = ["shipped", "outfordelivery"].includes(normalizedStatus);
+  // Match backend: user cannot cancel once shipped/outForDelivery/delivered/cancelled/failed
+  const canCancel = ["pending", "processing"].includes(normalizedStatus);
+  const isFinalStatus = ["delivered", "cancelled", "failed"].includes(normalizedStatus);
+
+  const updateOrderStatus = async (status: "shipped" | "outForDelivery" | "cancelled" | "delivered") => {
     try {
-      setLoading(status === "shipped" ? "ship" : status === "cancelled" ? "cancel" : "deliver");
+      setLoading(
+        status === "shipped"
+          ? "ship"
+          : status === "outForDelivery"
+          ? "outForDelivery"
+          : status === "cancelled"
+          ? "cancel"
+          : "deliver"
+      );
       const adminToken = localStorage.getItem("admin_token");
       const headers = adminToken ? { Authorization: `Bearer ${adminToken}` } : {};
 
@@ -817,13 +846,14 @@ function OrderActions({ orderId, onClose }: { orderId: string; onClose: () => vo
   return (
     <div className="flex flex-wrap gap-2 justify-end">
       <button
+        disabled={!!loading}
         onClick={onClose}
         className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
       >
         Close
       </button>
       <button
-        disabled={loading === "ship"}
+        disabled={!!loading || !canShip || isFinalStatus}
         className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 flex items-center gap-2 disabled:opacity-50 transition-colors"
         onClick={() => updateOrderStatus("shipped")}
       >
@@ -831,7 +861,15 @@ function OrderActions({ orderId, onClose }: { orderId: string; onClose: () => vo
         Ship Order
       </button>
       <button
-        disabled={loading === "deliver"}
+        disabled={!!loading || !canOutForDelivery || isFinalStatus}
+        className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 flex items-center gap-2 disabled:opacity-50 transition-colors"
+        onClick={() => updateOrderStatus("outForDelivery")}
+      >
+        {loading === "outForDelivery" && <Loader2 className="w-4 h-4 animate-spin" />}
+        Out for delivery
+      </button>
+      <button
+        disabled={!!loading || !canDeliver || isFinalStatus}
         className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center gap-2 disabled:opacity-50 transition-colors"
         onClick={() => updateOrderStatus("delivered")}
       >
@@ -839,7 +877,7 @@ function OrderActions({ orderId, onClose }: { orderId: string; onClose: () => vo
         Mark Delivered
       </button>
       <button
-        disabled={loading === "cancel"}
+        disabled={!!loading || !canCancel || isFinalStatus}
         className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 flex items-center gap-2 disabled:opacity-50 transition-colors"
         onClick={() => updateOrderStatus("cancelled")}
       >

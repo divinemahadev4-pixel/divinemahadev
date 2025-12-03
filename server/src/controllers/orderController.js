@@ -3,6 +3,7 @@ const Order = require("../models/Order");
 const User = require("../models/user");
 const { createNotification } = require("./notificationController");
 const mongoose = require('mongoose');
+const { sendEmail } = require("../utils/sendEmail");
 
 // Enhanced create order with proper validation
 const createOrder = async (req, res) => {
@@ -125,6 +126,23 @@ const createOrder = async (req, res) => {
     console.log('📦 Creating order with data:', orderData);
 
     const order = await Order.create(orderData);
+
+    // Send order placed email
+    try {
+      const orderShortId = order._id.toString().slice(-6).toUpperCase();
+      const emailMessage = `
+        <p>Hi${req.user.firstName ? ` ${req.user.firstName}` : ''},</p>
+        <p>Thank you for your order with <b>AnokhiAda</b>.</p>
+        <p>Your order <b>#${orderShortId}</b> has been <b>placed</b> successfully and is now being processed.</p>
+        <p><b>Total Amount:</b> ₹${order.totalAmount}</p>
+        <p>We will notify you once your order is shipped.</p>
+        <p>Regards,<br/>AnokhiAda Team</p>
+      `;
+
+      await sendEmail(orderEmail, `Your order #${orderShortId} has been placed`, emailMessage);
+    } catch (emailError) {
+      console.error('Error sending order placed email:', emailError);
+    }
 
     // Create notification
     await createNotification(
@@ -332,7 +350,7 @@ const updateOrderStatus = async (req, res) => {
     }
 
     // Validate status
-    const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+    const validStatuses = ['pending', 'processing', 'shipped', 'outForDelivery', 'delivered', 'cancelled'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({
         success: false,
@@ -361,9 +379,51 @@ const updateOrderStatus = async (req, res) => {
     const notificationMessages = {
       processing: "Your order is now being processed and will be prepared for shipping soon.",
       shipped: `Your order has been shipped! ${trackingNumber ? `Tracking: ${trackingNumber}` : 'Track your delivery.'}`,
+      outForDelivery: "Your order is out for delivery and will reach you soon.",
       delivered: "Your order has been delivered successfully. Thank you for shopping with us!",
       cancelled: "Your order has been cancelled. If you have any questions, please contact support.",
     };
+
+    // Send status-specific emails for shipped, out for delivery, and delivered
+    try {
+      const orderShortId = order._id.toString().slice(-6).toUpperCase();
+
+      if (status === 'shipped') {
+        const shippedMessage = `
+          <p>Hi${order.userId.firstName ? ` ${order.userId.firstName}` : ''},</p>
+          <p>Your order <b>#${orderShortId}</b> has been <b>shipped</b>.</p>
+          ${trackingNumber ? `<p><b>Tracking Number:</b> ${trackingNumber}</p>` : ''}
+          <p>It will be delivered soon.</p>
+          <p>Regards,<br/>AnokhiAda Team</p>
+        `;
+
+        await sendEmail(order.userId.email, `Your order #${orderShortId} has been shipped`, shippedMessage);
+      }
+
+      if (status === 'outForDelivery') {
+        const ofdMessage = `
+          <p>Hi${order.userId.firstName ? ` ${order.userId.firstName}` : ''},</p>
+          <p>Your order <b>#${orderShortId}</b> is <b>out for delivery</b>.</p>
+          <p>It will be delivered to you shortly.</p>
+          <p>Regards,<br/>AnokhiAda Team</p>
+        `;
+
+        await sendEmail(order.userId.email, `Your order #${orderShortId} is out for delivery`, ofdMessage);
+      }
+
+      if (status === 'delivered') {
+        const deliveredMessage = `
+          <p>Hi${order.userId.firstName ? ` ${order.userId.firstName}` : ''},</p>
+          <p>Your order <b>#${orderShortId}</b> has been <b>delivered</b> successfully.</p>
+          <p>We hope you enjoy your purchase. Thank you for shopping with <b>AnokhiAda</b>!</p>
+          <p>Regards,<br/>AnokhiAda Team</p>
+        `;
+
+        await sendEmail(order.userId.email, `Your order #${orderShortId} has been delivered`, deliveredMessage);
+      }
+    } catch (emailError) {
+      console.error('Error sending order status email:', emailError);
+    }
 
     if (notificationMessages[status]) {
       await createNotification(
@@ -485,7 +545,7 @@ const cancelOrderByUser = async (req, res) => {
       });
     }
 
-    if (["shipped", "delivered", "cancelled", "failed"].includes(order.status)) {
+    if (["shipped", "outForDelivery", "delivered", "cancelled", "failed"].includes(order.status)) {
       return res.status(400).json({
         success: false,
         message: "This order can no longer be cancelled",

@@ -4,6 +4,7 @@ const { createNotification } = require("./notificationController");
 const mongoose = require("mongoose");
 const crypto = require("crypto"); // Razorpay signature verification ke liye
 require("dotenv").config();
+const { sendEmail } = require("../utils/sendEmail");
 
 // ✅ Environment Variables ko Razorpay ke hisaab se change kiya
 const {
@@ -172,6 +173,28 @@ exports.createOrder = async (req, res) => {
       });
 
       const savedOrder = await codOrder.save();
+
+      // Send order placed email for COD
+      try {
+        const orderShortId = savedOrder._id.toString().slice(-6).toUpperCase();
+        const emailMessage = `
+          <p>Hi,</p>
+          <p>Thank you for your order with <b>AnokhiAda</b>.</p>
+          <p>Your order <b>#${orderShortId}</b> has been <b>placed</b> successfully and is now being processed.</p>
+          <p><b>Total Amount:</b> ₹${savedOrder.totalAmount}</p>
+          <p>We will notify you once your order is shipped.</p>
+          <p>Regards,<br/>AnokhiAda Team</p>
+        `;
+
+        await sendEmail(
+          savedOrder.user_email,
+          `Your order #${orderShortId} has been placed`,
+          emailMessage
+        );
+      } catch (emailError) {
+        console.error("Error sending COD order placed email:", emailError);
+      }
+
       await createNotification(
         userId,
         "COD Order Placed Successfully",
@@ -203,7 +226,7 @@ exports.createOrder = async (req, res) => {
         paymentMethod: "online",
         // cashfreeOrderId ke bajaye ab yeh hamara internal receipt ID hai
         // ya phir hum Razorpay ka order ID bhi store kar sakte hain baad mein
-        razorpayReceiptId: internalReceiptId, 
+        razorpayReceiptId: internalReceiptId, // Internal Receipt ID
       });
 
       const savedOrder = await pendingOrder.save();
@@ -321,6 +344,26 @@ exports.verifyPayment = async (req, res) => {
         "order",
         order._id
       );
+
+      // Send order placed email for successful online payment
+      try {
+        const orderShortId = order._id.toString().slice(-6).toUpperCase();
+        const emailMessage = `
+          <p>Hi,</p>
+          <p>Your payment of <b>₹${order.totalAmount}</b> was successful.</p>
+          <p>Your order <b>#${orderShortId}</b> has been <b>placed</b> and is now being processed.</p>
+          <p>We will notify you once your order is shipped.</p>
+          <p>Regards,<br/>AnokhiAda Team</p>
+        `;
+
+        await sendEmail(
+          order.user_email,
+          `Your order #${orderShortId} has been placed`,
+          emailMessage
+        );
+      } catch (emailError) {
+        console.error("Error sending online order placed email:", emailError);
+      }
 
       console.log("✅ Payment verified and order updated:", order._id);
 
