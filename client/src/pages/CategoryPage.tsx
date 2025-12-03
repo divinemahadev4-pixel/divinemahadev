@@ -343,7 +343,7 @@ const CategoryPage = () => {
 
       {/* Controls Section */}
       {!loading && products.length > 0 && (
-        <div className="bg-white/90 backdrop-blur-md border-y border-amber-200 sticky top-0 z-30 shadow-sm">
+        <div className="bg-white/90 backdrop-blur-md border-y border-amber-200 md:sticky md:top-0 z-30 shadow-sm">
           <div className="container mx-auto px-4 lg:px-6 py-4">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-3">
@@ -494,7 +494,7 @@ const CategoryPage = () => {
                     <div className="p-4 flex-grow flex flex-col bg-transparent">
                       <div className="mb-3">
                         <h3
-                          className="font-bold text-sm text-gray-900 line-clamp-2 leading-tight cursor-pointer hover:text-amber-600 transition-colors mb-1 min-h-[40px]"
+                          className="font-bold text-sm text-gray-900 line-clamp-2 break-words leading-tight cursor-pointer hover:text-amber-600 transition-colors mb-1 min-h-[40px]"
                           style={{ fontFamily: "'Playfair Display', serif" }}
                           onClick={() => handleProductClick(product._id)}
                         >

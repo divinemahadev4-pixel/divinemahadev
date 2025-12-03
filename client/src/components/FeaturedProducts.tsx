@@ -171,7 +171,7 @@ const ProductCard: React.FC<{
         <div className="flex flex-col flex-1 px-1">
           {/* Title - Bold and Dark */}
           <h3
-            className="text-[13px] md:text-[15px] font-bold text-gray-900 line-clamp-2 leading-snug mb-1.5"
+            className="text-[13px] md:text-[15px] font-bold text-gray-900 line-clamp-2 break-words leading-snug mb-1.5"
             style={{ fontFamily: "'Playfair Display', serif" }}
           >
             {product.Product_name}
@@ -513,7 +513,11 @@ const FeaturedProducts: React.FC = () => {
               size="sm"
               variant={selectedCategory === "" ? "default" : "outline"}
               onClick={() => setSelectedCategory("")}
-              className="rounded-full whitespace-nowrap px-4 bg-orange-600 hover:bg-orange-700 text-white border-0"
+              className={`rounded-full whitespace-nowrap px-4 ${
+                selectedCategory === ""
+                  ? "bg-orange-600 hover:bg-orange-700 text-white border-0"
+                  : "border-gray-200 text-gray-600 hover:border-orange-300 hover:text-orange-700"
+              }`}
             >
               All Items
             </Button>
@@ -534,33 +538,49 @@ const FeaturedProducts: React.FC = () => {
             ))}
           </div>
 
-          {/* Grid Layout - Same as previous fix, aligned properly for mobile */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-6 mb-0 items-stretch">
-            {products.map((product) => (
-              <ProductCard
-                key={product._id}
-                product={product}
-                onClick={handleProductClick}
-                onWishlistToggle={handleWishlistToggle}
-                onAddToCart={handleAddToCart}
-                onDirectBuy={handleDirectBuy}
-                inWishlist={isInWishlist(product._id)}
-              />
-            ))}
-          </div>
-
-          {hasMore && (
-            <div className="flex justify-center">
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={handleLoadMore}
-                disabled={loadingMore}
-                className="rounded-full px-8 py-6 border-orange-200 text-orange-700 hover:bg-orange-50 hover:text-orange-800"
-              >
-                {loadingMore ? "Loading Blessings..." : "Load More"}
-              </Button>
+          {/* Grid Layout - show message when no products for selected category */}
+          {products.length === 0 ? (
+            <div className="py-10 flex flex-col items-center justify-center text-center">
+              <div className="w-14 h-14 rounded-full bg-orange-50 border border-orange-200 flex items-center justify-center mb-3">
+                <Sparkles className="w-6 h-6 text-orange-400" />
+              </div>
+              <p className="text-sm font-semibold text-gray-900 mb-1">
+                No products in this category yet
+              </p>
+              <p className="text-xs text-gray-500 max-w-sm">
+                Please try a different category or check back soon for new divine additions.
+              </p>
             </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-6 mb-0 items-stretch">
+                {products.map((product) => (
+                  <ProductCard
+                    key={product._id}
+                    product={product}
+                    onClick={handleProductClick}
+                    onWishlistToggle={handleWishlistToggle}
+                    onAddToCart={handleAddToCart}
+                    onDirectBuy={handleDirectBuy}
+                    inWishlist={isInWishlist(product._id)}
+                  />
+                ))}
+              </div>
+
+              {hasMore && (
+                <div className="flex justify-center">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={handleLoadMore}
+                    disabled={loadingMore}
+                    className="rounded-full px-8 py-6 border-orange-200 text-orange-700 hover:bg-orange-50 hover:text-orange-800"
+                  >
+                    {loadingMore ? "Loading Blessings..." : "Load More"}
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </section>

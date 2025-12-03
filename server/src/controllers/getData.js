@@ -402,9 +402,9 @@ const getProducts = async (req, res) => {
 
     console.log(` Backend: Using skip=${skipValue}, limit=${limit}, query:`, query);
 
-    // Step 7: Select fields (include deliveryCharge for all products)
+    // Step 7: Select fields (include deliveryCharge & prepaidQuantityOffers for all products)
     let selectFields =
-      "Product_name Product_price discounted_price Product_discription Product_image Product_category Product_available colorVariants deliveryCharge";
+      "Product_name Product_price discounted_price Product_discription Product_image Product_category Product_available colorVariants deliveryCharge prepaidQuantityOffers";
 
     if (type === "hamper") {
       selectFields += " isHamper_product Hamper_price";
@@ -425,7 +425,7 @@ const getProducts = async (req, res) => {
       Product_category_name: product.Product_category?.category || "Uncategorized",
     }));
 
-    console.log(`📦 Backend: Found ${products.length} products, total: ${total}`);
+    console.log(` Backend: Found ${products.length} products, total: ${total}`);
 
     res.status(200).json({
       message: "Products fetched successfully",
@@ -446,7 +446,7 @@ const getProducts = async (req, res) => {
       }),
     });
   } catch (e) {
-    console.error("❌ Backend error in getProducts:", e);
+    console.error(" Backend error in getProducts:", e);
     res.status(400).json({
       message: "failed: " + e.message,
     });
@@ -474,12 +474,16 @@ const getAllData = async (req, res) => {
     const categoriesRaw = await Category.find({});
 
     // Transform categories to include standardized keys
-    const categories = categoriesRaw.map(cat => ({
+    const categories = categoriesRaw.map((cat) => ({
       _id: cat._id,
       name: cat.category,
       image: cat.category_image,
       description: cat.category_description,
-      slug: cat.category?.toLowerCase().replace(/\s+/g, "-") || cat._id.toString(),
+      // Use the real stored slug so frontend filters match backend lookups
+      slug: cat.slug ||
+        (cat.category
+          ? cat.category.toLowerCase().replace(/\s+/g, "-")
+          : cat._id.toString()),
     }));
 
     const response = {

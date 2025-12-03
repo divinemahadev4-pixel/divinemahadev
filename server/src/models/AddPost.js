@@ -75,6 +75,25 @@ const AddPostSchema = new Schema(
         ],
       },
     ],
+    prepaidQuantityOffers: [
+      {
+        minQty: {
+          type: Number,
+          min: 1,
+          required: true,
+        },
+        maxQty: {
+          type: Number,
+          min: 1,
+          required: true,
+        },
+        onlineDiscountAmount: {
+          type: Number,
+          min: 0,
+          required: true,
+        },
+      },
+    ],
     Product_slug: {
       type: String,
       index: true,

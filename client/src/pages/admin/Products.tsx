@@ -45,6 +45,7 @@ interface ProductType {
   isHamper_product: boolean;
   Product_public_id: string;
   colorVariants?: { colorName: string; colorCode?: string; imageIndexes: number[] }[];
+  prepaidQuantityOffers?: { minQty: number; maxQty: number; onlineDiscountAmount: number }[];
   material?: string;
   warrantyMonths?: number | null;
   returnPolicy?: string;
@@ -209,6 +210,9 @@ export default function Products() {
                 ? data.isAvailable
                 : productToEdit.Product_available,
             colorVariants: Array.isArray(data.colorVariants) ? data.colorVariants : productToEdit.colorVariants || [],
+            prepaidQuantityOffers: Array.isArray(data.prepaidQuantityOffers)
+              ? data.prepaidQuantityOffers
+              : (productToEdit as any).prepaidQuantityOffers || [],
             material: data.material ?? (productToEdit.material || ""),
             warrantyMonths: data.warrantyMonths ? Number(data.warrantyMonths) : (productToEdit.warrantyMonths ?? null),
             returnPolicy: data.returnPolicy ?? (productToEdit.returnPolicy || ""),
@@ -232,6 +236,9 @@ export default function Products() {
                       ? data.isAvailable
                       : p.Product_available,
                   colorVariants: Array.isArray(data.colorVariants) ? data.colorVariants : (p as any).colorVariants,
+                  prepaidQuantityOffers: Array.isArray(data.prepaidQuantityOffers)
+                    ? data.prepaidQuantityOffers
+                    : (p as any).prepaidQuantityOffers,
                   material: data.material ?? ((p as any).material || ""),
                   warrantyMonths: data.warrantyMonths ? Number(data.warrantyMonths) : (p as any).warrantyMonths,
                   returnPolicy: data.returnPolicy ?? ((p as any).returnPolicy || ""),
@@ -257,6 +264,9 @@ export default function Products() {
             isHamper_product: data.isHamperProduct ?? false,
             Product_public_id: "",
             colorVariants: Array.isArray(data.colorVariants) ? data.colorVariants : [],
+            prepaidQuantityOffers: Array.isArray(data.prepaidQuantityOffers)
+              ? data.prepaidQuantityOffers
+              : [],
             material: data.material || "",
             warrantyMonths: data.warrantyMonths ? Number(data.warrantyMonths) : null,
             returnPolicy: data.returnPolicy || "",
@@ -363,6 +373,7 @@ export default function Products() {
                         images: productToEdit.Product_image,
                         isAvailable: productToEdit.Product_available,
                         colorVariants: (productToEdit as any).colorVariants || [],
+                        prepaidQuantityOffers: (productToEdit as any).prepaidQuantityOffers || [],
                         material: (productToEdit as any).material || "",
                         warrantyMonths: (productToEdit as any).warrantyMonths ?? "",
                         returnPolicy: (productToEdit as any).returnPolicy || "",

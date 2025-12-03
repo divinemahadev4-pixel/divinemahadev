@@ -22,6 +22,12 @@ type ColorVariant = {
   imageIndexes: number[];
 };
 
+type PrepaidQuantityOffer = {
+  minQty: number;
+  maxQty: number;
+  onlineDiscountAmount: number;
+};
+
 interface ProductFormProps {
   onSubmit: (product: any) => void;
   categories: { id: string; name: string }[];
@@ -36,6 +42,7 @@ interface ProductFormProps {
     images?: string[];
     isAvailable?: boolean;
     colorVariants?: ColorVariant[];
+    prepaidQuantityOffers?: PrepaidQuantityOffer[];
     material?: string;
     warrantyMonths?: number | string | null;
     returnPolicy?: string;
@@ -74,6 +81,9 @@ const ProductForm: React.FC<ProductFormProps> = ({
   const [isAvailable, setIsAvailable] = useState(initialData?.isAvailable ?? true);
   const [colorVariants, setColorVariants] = useState<ColorVariant[]>(
     initialData?.colorVariants || []
+  );
+  const [prepaidQuantityOffers, setPrepaidQuantityOffers] = useState<PrepaidQuantityOffer[]>(
+    initialData?.prepaidQuantityOffers || []
   );
   const [material, setMaterial] = useState(initialData?.material || "");
   const [warrantyMonths, setWarrantyMonths] = useState(
@@ -143,6 +153,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
         images,
         isAvailable,
         colorVariants,
+        prepaidQuantityOffers,
         material,
         warrantyMonths,
         returnPolicy,
@@ -248,6 +259,104 @@ const ProductForm: React.FC<ProductFormProps> = ({
                 className="h-10"
               />
             </div>
+          </div>
+
+          <div className="space-y-3">
+            <Label>Prepaid Quantity Offers (optional)</Label>
+            <p className="text-xs text-gray-500">
+              Define extra online discount for specific quantity ranges. If left empty, the default prepaid discount will be applied.
+            </p>
+
+            <div className="space-y-3">
+              {prepaidQuantityOffers.map((offer, index) => (
+                <div
+                  key={index}
+                  className="grid grid-cols-3 gap-3 items-end border border-gray-200 rounded-md p-3 bg-gray-50"
+                >
+                  <div className="space-y-1">
+                    <Label className="text-xs">Min Qty</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={offer.minQty}
+                      onChange={(e) => {
+                        const value = Number(e.target.value) || 0;
+                        setPrepaidQuantityOffers((prev) =>
+                          prev.map((o, i) =>
+                            i === index ? { ...o, minQty: value } : o
+                          )
+                        );
+                      }}
+                      className="h-9 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Max Qty</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={offer.maxQty}
+                      onChange={(e) => {
+                        const value = Number(e.target.value) || 0;
+                        setPrepaidQuantityOffers((prev) =>
+                          prev.map((o, i) =>
+                            i === index ? { ...o, maxQty: value } : o
+                          )
+                        );
+                      }}
+                      className="h-9 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Online Discount (₹)</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        min={0}
+                        value={offer.onlineDiscountAmount}
+                        onChange={(e) => {
+                          const value = Number(e.target.value) || 0;
+                          setPrepaidQuantityOffers((prev) =>
+                            prev.map((o, i) =>
+                              i === index
+                                ? { ...o, onlineDiscountAmount: value }
+                                : o
+                            )
+                          );
+                        }}
+                        className="h-9 text-sm"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-9 text-xs"
+                        onClick={() =>
+                          setPrepaidQuantityOffers((prev) =>
+                            prev.filter((_, i) => i !== index)
+                          )
+                        }
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="h-9 text-xs"
+              onClick={() =>
+                setPrepaidQuantityOffers((prev) => [
+                  ...prev,
+                  { minQty: 1, maxQty: 1, onlineDiscountAmount: 50 },
+                ])
+              }
+            >
+              Add Prepaid Offer
+            </Button>
           </div>
 
           {/* Availability */}

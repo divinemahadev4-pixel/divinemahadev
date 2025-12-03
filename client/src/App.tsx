@@ -36,6 +36,7 @@ import Refund from './components/REFUND';
 import Terms from "./components/TERMS";
 import Contact from "./components/Contact";
 import About from "./components/About"
+import ScrollToTop from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +49,7 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
+              <ScrollToTop />
               <Routes>
                 <Route path="/" element={<MainLayout />}>
                   <Route index element={<Index />} />

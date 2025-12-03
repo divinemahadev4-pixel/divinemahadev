@@ -44,12 +44,19 @@ interface ColorVariant {
   imageIndexes?: number[];
 }
 
+interface PrepaidQuantityOffer {
+  minQty: number;
+  maxQty: number;
+  onlineDiscountAmount: number;
+}
+
 interface Product {
   _id: string;
   Product_name: string;
   Product_discription: string;
   Product_price: number;
   discounted_price?: number;
+
   Product_image: string[];
   Product_category: {
     category: string;
@@ -63,6 +70,7 @@ interface Product {
   warrantyMonths?: number | null;
   returnPolicy?: string;
   deliveryCharge?: number;
+  prepaidQuantityOffers?: PrepaidQuantityOffer[];
 }
 
 interface Review {
@@ -579,13 +587,15 @@ const ProductDetailPage: React.FC = () => {
       }
     }
 
-    // Base totals with discounts + per-product delivery charge
+    // Base totals for direct buy with per-product delivery charge
     const sellingPriceForPayment = buyProduct.Product_price;
     const baseItemsTotal = sellingPriceForPayment * quantity;
     const perUnitDelivery = buyProduct.deliveryCharge ?? 0;
     const totalDeliveryCharge = perUnitDelivery * quantity;
+    const prepaidOffers = buyProduct.prepaidQuantityOffers || [];
+    const prepaidDiscount = getPrepaidDiscountForQuantity(quantity);
     const codTotal = Math.max(1, Math.round(baseItemsTotal + totalDeliveryCharge));
-    const onlineTotal = Math.max(1, codTotal - 50);
+    const onlineTotal = Math.max(1, codTotal - prepaidDiscount);
 
     // Derive selected variant for direct buy
     const directVariantIndex = hasColorVariants ? selectedVariantIndex : null;
@@ -849,8 +859,25 @@ const ProductDetailPage: React.FC = () => {
   const lineTotal = displayPrice * quantity;
   const deliveryPerUnit = product?.deliveryCharge ?? 0;
   const deliveryTotal = deliveryPerUnit * quantity;
+  const prepaidOffers = product?.prepaidQuantityOffers || [];
+
+  const getPrepaidDiscountForQuantity = (qty: number): number => {
+    if (!Array.isArray(prepaidOffers) || prepaidOffers.length === 0) return 50;
+
+    const offer = prepaidOffers.find((o) => {
+      if (!o) return false;
+      const min = typeof o.minQty === "number" ? o.minQty : 0;
+      const max = typeof o.maxQty === "number" ? o.maxQty : 0;
+      return qty >= min && qty <= max;
+    });
+
+    if (!offer || typeof offer.onlineDiscountAmount !== "number") return 50;
+    return Math.max(0, Math.round(offer.onlineDiscountAmount));
+  };
+
+  const prepaidDiscount = getPrepaidDiscountForQuantity(quantity);
   const codPayableTotal = Math.max(1, Math.round(lineTotal + deliveryTotal));
-  const onlinePayableTotal = Math.max(1, codPayableTotal - 50);
+  const onlinePayableTotal = Math.max(1, codPayableTotal - prepaidDiscount);
   const overallCheckoutLoading = checkoutLoading || directCheckoutLoading;
 
   // Color variant helpers
@@ -1077,7 +1104,7 @@ const ProductDetailPage: React.FC = () => {
                       )}
                     </div>
                     <p className="text-sm text-gray-600">
-                      Inclusive of all taxes • {deliveryPerUnit > 0 ? `Delivery ₹${deliveryPerUnit.toLocaleString()} per item` : "Free delivery"} • 3–5 days • Blessed packaging
+                      Inclusive of all taxes • Dispatch in 3–5 days
                     </p>
                   </div>
 
@@ -1594,11 +1621,7 @@ const ProductDetailPage: React.FC = () => {
                         </span>
                       </p>
                     )}
-                    <p className="text-[11px] text-emerald-700 font-semibold">
-                      {deliveryTotal > 0
-                        ? `Delivery ₹${deliveryTotal.toLocaleString()} in 3–5 days`
-                        : "Free Delivery in 3–5 days"}
-                    </p>
+                    <p className="text-[11px] text-emerald-700 font-semibold">Dispatch in 3–5 days</p>
                     <p className="text-[11px] text-gray-500">Inclusive of all taxes</p>
                   </div>
                 </div>
@@ -1617,7 +1640,7 @@ const ProductDetailPage: React.FC = () => {
                       </div>
                     )}
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-600">Delivery charges</span>
+                      <span className="text-gray-600">Delivery (3–5 days)</span>
                       <span className="font-medium text-emerald-600">
                         {deliveryTotal > 0
                           ? `₹${deliveryTotal.toLocaleString()}`
@@ -1760,7 +1783,7 @@ const ProductDetailPage: React.FC = () => {
                       <CreditCard size={16} />
                       <span className="text-left">
                         <span className="block text-xs">Pay Online</span>
-                        <span className="block text-[11px] opacity-90">Pay ₹{onlinePayableTotal.toLocaleString()} (₹50 OFF)</span>
+                        <span className="block text-[11px] opacity-90">Pay ₹{onlinePayableTotal.toLocaleString()} (₹{prepaidDiscount.toLocaleString()} OFF)</span>
                       </span>
                     </span>
                   )}

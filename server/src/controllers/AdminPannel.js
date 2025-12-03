@@ -171,6 +171,10 @@ const SaveProduct = async (req, res) => {
       colorVariants: Array.isArray(req.body.colorVariants)
         ? req.body.colorVariants
         : [],
+      // Optional quantity-based prepaid online offers
+      prepaidQuantityOffers: Array.isArray(req.body.prepaidQuantityOffers)
+        ? req.body.prepaidQuantityOffers
+        : [],
     });
 
     const savedProduct = await newProduct.save();
@@ -578,6 +582,7 @@ const updateProduct = async (req, res) => {
       hamperPrice,
       discounted_price,
       colorVariants,
+      prepaidQuantityOffers,
       Product_image,
       Product_category,
       Product_available,
@@ -605,6 +610,11 @@ const updateProduct = async (req, res) => {
     // Update optional color variants if provided
     if (Array.isArray(colorVariants)) {
       response.colorVariants = colorVariants;
+    }
+
+    // Update optional prepaid quantity-based online offers if provided
+    if (Array.isArray(prepaidQuantityOffers)) {
+      response.prepaidQuantityOffers = prepaidQuantityOffers;
     }
 
     // Update product images if provided (ensures colorVariants imageIndexes stay in sync)

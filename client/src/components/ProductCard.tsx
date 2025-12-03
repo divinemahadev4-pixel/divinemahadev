@@ -43,7 +43,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     return discount;
   };
 
-  const productId = product._id ? product._id : product.id;
+  const productId: string = product._id ? product._id : String(product.id);
   const productName = product.Product_name || product.name;
   const productPrice = product.Product_price || product.price;
   const productOriginalPrice = product.Product_originalPrice || product.originalPrice;
@@ -55,8 +55,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       ? product.Product_reviewCount
       : product.reviewCount;
 
+  const handleCardClick = () => {
+    navigate(`/product/${productId}`);
+  };
+
   return (
-    <div className="group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col h-full">
+    <div
+      className="group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col h-full cursor-pointer"
+      onClick={handleCardClick}
+    >
       <div className="relative aspect-[4/3] overflow-hidden">
         <img
           src={productImage}
@@ -78,9 +85,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               ? "text-rose-500 hover:bg-rose-50/80"
               : "text-gray-400 hover:bg-white/80"
           }`}
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation();
             if (user) {
-              toggleWishlist(product);
+              // Cast to align with WishlistContext Product type at call site
+              toggleWishlist(product as any);
               toast({ title: isInWishlist(productId) ? "Removed from wishlist" : "Added to wishlist", duration: 2000 });
             } else navigate("/login");
           }}
@@ -92,7 +101,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
       <div className="p-5 flex-grow flex flex-col">
         <div className="mb-3 flex justify-between items-start gap-2">
-          <h3 className="font-bold text-lg text-gray-900 line-clamp-2 leading-tight flex-1">{productName}</h3>
+          <h3 className="font-bold text-lg text-gray-900 line-clamp-2 break-words leading-tight flex-1">{productName}</h3>
 
           <div className="flex flex-col items-end gap-0.5">
             <div className="flex items-center bg-amber-50 text-amber-700 px-2 py-1 rounded">
@@ -122,7 +131,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
           <Button
             className="w-full rounded-lg py-5 font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 transition-all hover:scale-[1.02] shadow-md"
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               if (user) {
                 // Format product data to match CartContext expectations
                 const cartProduct = {
@@ -151,7 +161,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </Button>
           <Button
             className="w-full mt-2 rounded-md py-3 font-semibold bg-gradient-to-r from-green-500 to-green-700 text-white hover:from-green-600 hover:to-green-800 transition-all hover:scale-[1.03] shadow-lg"
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               if (user) {
                 // Implement buy now functionality here
                 toast({ title: "Buy Now clicked", duration: 3000 });
