@@ -681,7 +681,6 @@ const Orders = () => {
                 const st = orderStatus[selectedOrder.status as OrderState];
                 const steps = [
                   { id: "ordered", label: "Ordered" },
-                  { id: "processing", label: "Processing" },
                   { id: "shipped", label: "Shipped" },
                   { id: "outForDelivery", label: "Out for delivery" },
                   { id: "delivered", label: "Delivered" },
@@ -690,20 +689,20 @@ const Orders = () => {
                 const currentRaw = selectedOrder.status as OrderState;
                 const statusToIndex: Record<OrderState, number> = {
                   pending: 0,
-                  processing: 1,
-                  shipped: 2,
-                  outForDelivery: 3,
-                  delivered: 4,
+                  processing: 0, // treat processing as early/ordered stage
+                  shipped: 1,
+                  outForDelivery: 2,
+                  delivered: 3,
                   cancelled: 0,
                   failed: 0,
                 };
+
                 const currentIndex = statusToIndex[currentRaw] ?? 0;
 
                 const progressPercent =
                   steps.length > 1 ? (currentIndex / (steps.length - 1)) * 100 : 0;
 
                 const raw: any = selectedOrder;
-                const processingAt = raw?.processingAt as string | undefined;
                 const shippedAt = raw?.shippedAt as string | undefined;
                 const deliveredAt = raw?.deliveredAt as string | undefined;
                 const updatedAt = raw?.updatedAt as string | undefined;
@@ -760,15 +759,6 @@ const Orders = () => {
                       <span className="text-right">
                         {formatDate(selectedOrder.createdAt)} • {formatTime(selectedOrder.createdAt)}
                       </span>
-
-                      {processingAt && (
-                        <>
-                          <span className="font-medium">Processing</span>
-                          <span className="text-right">
-                            {formatDate(processingAt)} • {formatTime(processingAt)}
-                          </span>
-                        </>
-                      )}
 
                       {shippedAt && (
                         <>
@@ -849,15 +839,43 @@ const Orders = () => {
                 <div className="space-y-2">
                   {selectedOrder.items.map((item, idx) => {
                     let name = item.name;
-                    if (!name && typeof item.productId === "object" && item.productId) {
-                      name = item.productId.Product_name || item.productId.name;
-                    }
-                    const price = item.price;
-                    const thumb =
+                    const prod =
                       typeof item.productId === "object" && item.productId
-                        ? item.productId.Product_image?.[0] || item.productId.image
-                        : item.image;
-                    const lineTotal = price * item.quantity;
+                        ? (item.productId as any)
+                        : null;
+
+                    if (!name && prod) {
+                      name = prod.Product_name || prod.name;
+                    }
+
+                    const sellingPrice = item.price;
+
+                    // Derive an "MRP" from product data when possible
+                    let mrp = sellingPrice;
+                    if (
+                      typeof prod?.discounted_price === "number" &&
+                      prod.discounted_price > sellingPrice
+                    ) {
+                      mrp = prod.discounted_price;
+                    } else if (
+                      typeof prod?.Product_price === "number" &&
+                      prod.Product_price > sellingPrice
+                    ) {
+                      mrp = prod.Product_price;
+                    }
+
+                    const perItemSavings = Math.max(0, mrp - sellingPrice);
+                    const perItemSavingsPct =
+                      perItemSavings > 0 ? Math.round((perItemSavings / mrp) * 100) : 0;
+
+                    const thumb =
+                      prod && prod.Product_image?.[0]
+                        ? prod.Product_image[0]
+                        : prod?.image || item.image;
+
+                    const lineTotal = sellingPrice * item.quantity;
+                    const lineMrpTotal = mrp * item.quantity;
+                    const lineSavingsTotal = Math.max(0, lineMrpTotal - lineTotal);
 
                     return (
                       <div
@@ -875,11 +893,24 @@ const Orders = () => {
                           <p className="text-xs font-semibold text-orange-900 truncate">
                             {name || "Item"}
                           </p>
-                          <p className="text-[11px] text-orange-600">
-                            Qty: {item.quantity} × ₹{price.toFixed(2)}
-                          </p>
+                          <div className="text-[11px] text-orange-700 flex items-center gap-1 flex-wrap">
+                            {perItemSavings > 0 && (
+                              <span className="line-through text-[10px] text-orange-400">
+                                ₹{mrp.toFixed(2)}
+                              </span>
+                            )}
+                            <span className="font-semibold">
+                              ₹{sellingPrice.toFixed(2)}
+                            </span>
+                            {perItemSavings > 0 && (
+                              <span className="text-[10px] text-green-600 font-medium">
+                                You save ₹{perItemSavings.toFixed(0)}
+                                {perItemSavingsPct > 0 && ` (${perItemSavingsPct}% )`}
+                              </span>
+                            )}
+                          </div>
                           <p className="text-[10px] text-orange-500">
-                            Line total: ₹{lineTotal.toFixed(2)}
+                            Qty: {item.quantity} &bull; Line total: ₹{lineTotal.toFixed(2)}
                           </p>
                         </div>
                         <div className="text-right text-xs text-orange-800 font-semibold">

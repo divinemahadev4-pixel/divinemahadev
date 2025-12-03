@@ -425,7 +425,7 @@ exports.getUserOrders = async (req, res) => {
       .populate({
         path: "items.productId",
         select:
-          "Product_name Product_image Hamper_price Product_price name image",
+          "Product_name Product_image Hamper_price Product_price discounted_price name image deliveryCharge prepaidQuantityOffers",
         options: { strictPopulate: false },
       })
       .sort({ createdAt: -1 })
